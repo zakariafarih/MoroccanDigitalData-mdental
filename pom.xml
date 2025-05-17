@@ -24,6 +24,7 @@
         <module>shared-libs/security-commons</module>
         <module>core-services/auth-core</module>
         <module>core-services/clinic-core</module>
+        <module>core-services/gateway-core</module>
     </modules>
 
     <properties>
