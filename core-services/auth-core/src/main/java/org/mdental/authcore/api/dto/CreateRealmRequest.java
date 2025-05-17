@@ -1,4 +1,4 @@
-package org.mdental.authcore.model.dto;
+package org.mdental.authcore.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -21,4 +21,3 @@ public class CreateRealmRequest {
     @Pattern(regexp = "^mdental-[a-z0-9-]+$", message = "Realm name must start with 'mdental-' followed by lowercase letters, numbers, and hyphens")
     private String realm;
 }
-

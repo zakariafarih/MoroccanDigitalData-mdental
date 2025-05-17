@@ -11,15 +11,15 @@ import org.mdental.cliniccore.repository.BusinessHoursRepository;
 import org.mdental.commons.exception.BaseException;
 import org.mdental.commons.model.ErrorCode;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -189,11 +189,25 @@ public class BusinessHoursService {
     }
 
     /**
-     * Gets the current authenticated username or "system" if not available
+     * Gets the current username from request header or "system" if not available
      */
     private String getCurrentUsername() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (auth != null) ? auth.getName() : "system";
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String username = request.getHeader("X-User-Username");
+                if (username != null && !username.isBlank()) {
+                    return username;
+                }
+            }
+        } catch (Exception e) {
+            // Fall back to system user
+        }
+
+        return "system";
     }
 
     // Custom exceptions

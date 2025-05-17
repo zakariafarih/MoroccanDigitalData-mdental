@@ -8,15 +8,15 @@ import org.mdental.cliniccore.model.dto.AddressRequest;
 import org.mdental.cliniccore.model.entity.Address;
 import org.mdental.cliniccore.model.entity.Clinic;
 import org.mdental.cliniccore.repository.AddressRepository;
-import org.mdental.cliniccore.security.SameClinic;
 import org.mdental.commons.exception.BaseException;
 import org.mdental.commons.model.ErrorCode;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,7 +32,6 @@ public class AddressService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
-    @SameClinic
     public List<Address> getAddressByClinicId(UUID clinicId) {
         log.debug("Fetching addresses for clinic ID: {}", clinicId);
         // Verify clinic exists
@@ -48,7 +47,6 @@ public class AddressService {
     }
 
     @Transactional
-    @SameClinic
     public Address createAddress(UUID clinicId, AddressRequest request) {
         log.info("Creating new address for clinic ID: {}", clinicId);
 
@@ -157,11 +155,25 @@ public class AddressService {
     }
 
     /**
-     * Gets the current authenticated username or "system" if not available
+     * Gets the current username from request header or "system" if not available
      */
     private String getCurrentUsername() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (auth != null) ? auth.getName() : "system";
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String username = request.getHeader("X-User-Username");
+                if (username != null && !username.isBlank()) {
+                    return username;
+                }
+            }
+        } catch (Exception e) {
+            // Fall back to system user
+        }
+
+        return "system";
     }
 
     // Custom exceptions

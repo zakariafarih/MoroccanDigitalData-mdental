@@ -8,7 +8,6 @@ import org.mdental.cliniccore.model.dto.CreateClinicRequest;
 import org.mdental.cliniccore.model.dto.UpdateClinicRequest;
 import org.mdental.cliniccore.model.entity.Clinic;
 import org.mdental.cliniccore.repository.ClinicRepository;
-import org.mdental.cliniccore.security.SameClinic;
 import org.mdental.commons.exception.BaseException;
 import org.mdental.commons.model.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,12 +18,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -59,7 +58,6 @@ public class ClinicService {
 
     @Transactional(readOnly = true)
     @Cacheable(value = "clinics", key = "#id")
-    @SameClinic
     public Clinic getClinicById(UUID id) {
         log.debug("Fetching clinic with ID: {}", id);
         return clinicRepository.findByIdWithAllRelationships(id)
@@ -128,7 +126,6 @@ public class ClinicService {
 
     @Transactional
     @CacheEvict(value = "clinics", key = "#id")
-    @SameClinic
     public Clinic updateClinic(UUID id, UpdateClinicRequest request) {
         log.info("Updating clinic with ID: {}", id);
         Clinic clinic = getClinicById(id);
@@ -197,7 +194,6 @@ public class ClinicService {
 
     @Transactional
     @CacheEvict(value = "clinics", key = "#id")
-    @SameClinic
     public Clinic updateClinicStatus(UUID id, Clinic.ClinicStatus status) {
         log.info("Updating clinic status to {} for clinic ID: {}", status, id);
         Clinic clinic = getClinicById(id);
@@ -215,7 +211,6 @@ public class ClinicService {
 
     @Transactional
     @CacheEvict(value = "clinics", key = "#id")
-    @SameClinic
     public void deleteClinic(UUID id) {
         log.info("Deleting clinic with ID: {}", id);
         Clinic clinic = getClinicById(id);
@@ -257,11 +252,25 @@ public class ClinicService {
     }
 
     /**
-     * Gets the current authenticated username or "system" if not available
+     * Gets the current username from request header or "system" if not available
      */
     private String getCurrentUsername() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (auth != null) ? auth.getName() : "system";
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String username = request.getHeader("X-User-Username");
+                if (username != null && !username.isBlank()) {
+                    return username;
+                }
+            }
+        } catch (Exception e) {
+            // Fall back to system user
+        }
+
+        return "system";
     }
 
     /**

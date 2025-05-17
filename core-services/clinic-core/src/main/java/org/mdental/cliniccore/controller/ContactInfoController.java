@@ -2,6 +2,7 @@ package org.mdental.cliniccore.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +12,6 @@ import org.mdental.cliniccore.model.entity.ContactInfo;
 import org.mdental.cliniccore.service.ContactInfoService;
 import org.mdental.commons.model.ApiResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,15 +23,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Clinic Contact Information", description = "APIs for managing clinic contact information")
-@PreAuthorize("hasRole('CLINIC_ADMIN')")
 public class ContactInfoController {
 
     private final ContactInfoService contactInfoService;
+    private final HttpServletRequest request;
 
     @GetMapping
     @Operation(summary = "Get all contacts for a clinic", description = "Returns all contact information for the specified clinic")
     public ApiResponse<List<ContactInfoResponse>> getAllContactInfo(@PathVariable UUID clinicId) {
         log.info("REST request to get all contact info for clinic: {}", clinicId);
+        verifyClinicAccess(clinicId);
         List<ContactInfo> contactInfos = contactInfoService.getContactInfoByClinicId(clinicId);
         List<ContactInfoResponse> response = contactInfos.stream()
                 .map(this::mapToContactInfoResponse)
@@ -45,6 +46,7 @@ public class ContactInfoController {
             @PathVariable UUID clinicId,
             @PathVariable UUID id) {
         log.info("REST request to get contact info: {} for clinic: {}", id, clinicId);
+        verifyClinicAccess(clinicId);
         ContactInfo contactInfo = contactInfoService.getContactInfoById(id);
 
         // Validate that the contact belongs to the specified clinic
@@ -62,6 +64,7 @@ public class ContactInfoController {
             @PathVariable UUID clinicId,
             @Valid @RequestBody ContactInfoRequest request) {
         log.info("REST request to create contact info for clinic: {}", clinicId);
+        verifyClinicAccess(clinicId);
         ContactInfo contactInfo = contactInfoService.createContactInfo(clinicId, request);
         return ApiResponse.success(mapToContactInfoResponse(contactInfo));
     }
@@ -73,6 +76,7 @@ public class ContactInfoController {
             @PathVariable UUID id,
             @Valid @RequestBody ContactInfoRequest request) {
         log.info("REST request to update contact info: {} for clinic: {}", id, clinicId);
+        verifyClinicAccess(clinicId);
 
         // Verify the contact belongs to the specified clinic before updating
         ContactInfo existing = contactInfoService.getContactInfoById(id);
@@ -91,6 +95,7 @@ public class ContactInfoController {
             @PathVariable UUID clinicId,
             @PathVariable UUID id) {
         log.info("REST request to delete contact info: {} for clinic: {}", id, clinicId);
+        verifyClinicAccess(clinicId);
 
         // Verify the contact belongs to the specified clinic before deleting
         ContactInfo existing = contactInfoService.getContactInfoById(id);
@@ -117,5 +122,21 @@ public class ContactInfoController {
                 .updatedAt(contactInfo.getUpdatedAt())
                 .updatedBy(contactInfo.getUpdatedBy())
                 .build();
+    }
+
+    /**
+     * Verifies the current user has access to the specified clinic
+     */
+    private void verifyClinicAccess(UUID clinicId) {
+        // Super admin has access to all clinics
+        if (request.isUserInRole("SUPER_ADMIN")) {
+            return;
+        }
+
+        // Check if clinic ID in path matches the user's clinic ID from header
+        String userClinicId = request.getHeader("X-User-ClinicId");
+        if (userClinicId == null || !userClinicId.equals(clinicId.toString())) {
+            throw new ClinicController.AccessDeniedException("You don't have access to this clinic");
+        }
     }
 }

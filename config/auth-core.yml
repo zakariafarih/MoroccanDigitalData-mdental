@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: auth-core
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mdental_auth}
+    username: ${vault:secret/mdental/auth-core/db/username}
+    password: ${vault:secret/mdental/auth-core/db/password}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+keycloak:
+  base-url: ${KEYCLOAK_BASE_URL:http://localhost:8080}
+  admin-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8080/admin/realms}
+  token-url: ${KEYCLOAK_TOKEN_URL:http://localhost:8080/realms/master/protocol/openid-connect/token}
+  admin-username: ${vault:secret/mdental/auth-core/keycloak/admin-username}
+  admin-password: ${vault:secret/mdental/auth-core/keycloak/admin-password}
+
+mdental:
+  auth:
+    allowed-issuer-patterns: ${ALLOWED_ISSUER_PATTERNS:http://localhost:8080/realms/platform,http://localhost:8080/realms/mdental-}

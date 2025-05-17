@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: clinic-core
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mdental_clinic}
+    username: ${vault:secret/mdental/clinic-core/db/username}
+    password: ${vault:secret/mdental/clinic-core/db/password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc.time_zone: UTC
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  cache:
+    type: caffeine
+    caffeine.spec: maximumSize=500,expireAfterWrite=300s
+
+clinic:
+  allowed-sort-properties: name,realm,slug,createdAt,status,updatedAt
+
+auth-core:
+  url: ${AUTH_CORE_URL:http://auth-core:8081}
+
+mdental:
+  auth:
+    allowed-issuer-patterns: ${ALLOWED_ISSUER_PATTERNS:http://localhost:8080/realms/platform,http://localhost:8080/realms/mdental-}

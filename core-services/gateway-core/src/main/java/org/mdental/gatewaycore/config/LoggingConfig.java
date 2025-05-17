@@ -16,7 +16,7 @@ import java.util.UUID;
 public class LoggingConfig {
 
     @Bean
-    @Order(-1) // Apply this filter first
+    @Order(-1)
     public WebFilter loggingFilter() {
         return (exchange, chain) -> {
             Instant startTime = Instant.now();

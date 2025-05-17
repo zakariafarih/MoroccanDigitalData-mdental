@@ -8,7 +8,6 @@ import org.mdental.cliniccore.model.dto.ClinicResponse;
 import org.mdental.cliniccore.model.dto.CreateClinicRequest;
 import org.mdental.cliniccore.model.dto.UpdateClinicRequest;
 import org.mdental.cliniccore.model.entity.Clinic;
-import org.mdental.cliniccore.security.TenantGuard;
 import org.mdental.cliniccore.service.ClinicProvisioningService;
 import org.mdental.cliniccore.service.ClinicService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +16,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -43,9 +43,6 @@ public class ClinicControllerTest {
 
     @MockBean
     private ClinicMapper clinicMapper;
-
-    @MockBean
-    private TenantGuard tenantGuard;
 
     @MockBean
     private ClinicProvisioningService clinicProvisioningService;
@@ -101,13 +98,12 @@ public class ClinicControllerTest {
         // Set up mapper
         when(clinicMapper.toDto(any(Clinic.class))).thenReturn(clinicResponse);
 
-        // ➋ provisioning stub used by POST /api/clinics
+        // provisioning stub used by POST /api/clinics
         when(clinicProvisioningService.provisionClinic(any(CreateClinicRequest.class)))
                 .thenReturn(clinic);
     }
 
     @Test
-    @WithMockUser(roles = "CLINIC_ADMIN")
     void createClinic_shouldReturnCreatedClinic() throws Exception {
         // Arrange
         when(clinicProvisioningService.provisionClinic(any(CreateClinicRequest.class)))
@@ -117,7 +113,9 @@ public class ClinicControllerTest {
         mockMvc.perform(post("/api/clinics")
                         .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createRequest)))
+                        .content(objectMapper.writeValueAsString(createRequest))
+                        .header("X-User-Username", "test-admin")
+                        .header("X-User-ClinicId", clinicId.toString()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(clinicId.toString()))
@@ -125,13 +123,14 @@ public class ClinicControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "CLINIC_ADMIN")
     void getClinic_shouldReturnClinic() throws Exception {
         // Arrange
         when(clinicService.getClinicById(clinicId)).thenReturn(clinic);
 
         // Act & Assert
-        mockMvc.perform(get("/api/clinics/{id}", clinicId))
+        mockMvc.perform(get("/api/clinics/{id}", clinicId)
+                        .header("X-User-Username", "test-admin")
+                        .header("X-User-ClinicId", clinicId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(clinicId.toString()))
@@ -139,16 +138,18 @@ public class ClinicControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "CLINIC_ADMIN")
     void updateClinic_shouldReturnUpdatedClinic() throws Exception {
         // Arrange
         when(clinicService.updateClinic(eq(clinicId), any(UpdateClinicRequest.class))).thenReturn(clinic);
+        when(clinicService.getClinicById(clinicId)).thenReturn(clinic);
 
         // Act & Assert
         mockMvc.perform(put("/api/clinics/{id}", clinicId)
                         .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateRequest)))
+                        .content(objectMapper.writeValueAsString(updateRequest))
+                        .header("X-User-Username", "test-admin")
+                        .header("X-User-ClinicId", clinicId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(clinicId.toString()))
@@ -156,41 +157,48 @@ public class ClinicControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "CLINIC_ADMIN")
     void updateClinicStatus_shouldReturnUpdatedClinic() throws Exception {
         // Arrange
         when(clinicService.updateClinicStatus(eq(clinicId), any(Clinic.ClinicStatus.class))).thenReturn(clinic);
+        when(clinicService.getClinicById(clinicId)).thenReturn(clinic);
 
         // Act & Assert
         mockMvc.perform(patch("/api/clinics/{id}/status", clinicId)
                         .with(SecurityMockMvcRequestPostProcessors.csrf())
-                        .param("status", "INACTIVE"))
+                        .param("status", "INACTIVE")
+                        .header("X-User-Username", "test-admin")
+                        .header("X-User-ClinicId", clinicId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(clinicId.toString()));
     }
 
     @Test
-    @WithMockUser(roles = "CLINIC_ADMIN")
     void deleteClinic_shouldReturnNoContent() throws Exception {
+        // Arrange
+        when(clinicService.getClinicById(clinicId)).thenReturn(clinic);
+
         // Act & Assert
         mockMvc.perform(delete("/api/clinics/{id}", clinicId)
-                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .header("X-User-Username", "test-admin")
+                        .header("X-User-ClinicId", clinicId.toString()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser(roles = "CLINIC_ADMIN")
     void getAllClinics_shouldReturnPaginatedClinics() throws Exception {
         // Arrange
         PageImpl<Clinic> page = new PageImpl<>(List.of(clinic));
         when(clinicService.getFilteredClinics(any(), any(), any(Pageable.class))).thenReturn(page);
-        when(tenantGuard.getCurrentRealm()).thenReturn("test-clinic");
+        when(clinicService.getClinicById(any())).thenReturn(clinic);
 
         // Act & Assert
         mockMvc.perform(get("/api/clinics")
                         .param("page", "0")
-                        .param("size", "10"))
+                        .param("size", "10")
+                        .header("X-User-Username", "test-admin")
+                        .header("X-User-ClinicId", clinicId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content[0].id").value(clinicId.toString()));

@@ -1,4 +1,4 @@
-package org.mdental.authcore.model.dto;
+package org.mdental.authcore.api.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

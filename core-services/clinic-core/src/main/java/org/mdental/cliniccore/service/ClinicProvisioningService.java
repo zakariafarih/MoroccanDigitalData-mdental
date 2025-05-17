@@ -2,8 +2,6 @@ package org.mdental.cliniccore.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mdental.authcore.model.dto.CreateRealmRequest;
-import org.mdental.authcore.model.dto.RealmResponse;
 import org.mdental.cliniccore.client.AuthCoreClient;
 import org.mdental.cliniccore.model.dto.CreateClinicRequest;
 import org.mdental.cliniccore.model.entity.Clinic;
