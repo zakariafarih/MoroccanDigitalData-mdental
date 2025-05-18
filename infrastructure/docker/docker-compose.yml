@@ -67,6 +67,25 @@ services:
     networks:
       - mdental-network
 
+  patient-core:
+    depends_on:
+      - postgres
+      - keycloak
+      - auth-core
+    build:
+      context: ./
+      dockerfile: core-services/patient-core/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mdental_clinic
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      AUTH_CORE_URL: http://auth-core:8081
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/platform
+    networks:
+      - mdental-network
+
   clinic-core:
     depends_on:
       - postgres

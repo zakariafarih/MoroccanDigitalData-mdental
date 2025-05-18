@@ -66,6 +66,18 @@ public class GatewayConfig {
                         )
                         .uri("lb://auth-core"))
 
+                .route("patient-core", r -> r
+                        .path("/api/clinics/*/patients/**")
+                        .filters(f -> f
+                                .circuitBreaker(config -> config
+                                        .setName("patientServiceCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/patient"))
+                                .rewritePath("/api/clinics/(?<cid>.*)/patients/(?<segment>.*)",
+                                        "/api/${segment}")
+                                .addRequestHeader("X-Gateway-Request-Id", "#{T(java.util.UUID).randomUUID().toString()}")
+                        )
+                        .uri("lb://patient-core"))
+
                 .build();
     }
 
