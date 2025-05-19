@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.authcore.api.dto.RealmResponse;
 import org.mdental.authcore.client.KeycloakClient;
+import org.mdental.authcore.exception.ValidationException;
 import org.mdental.authcore.model.entity.Realm;
 import org.mdental.authcore.repository.RealmRepository;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +72,7 @@ public class RealmProvisioningService {
 
         // Find realm in database
         Realm realm = realmRepository.findByName(realmName)
-                .orElseThrow(() -> new IllegalArgumentException("Realm not found: " + realmName));
+                .orElseThrow(() -> new ValidationException("Realm not found: " + realmName));
 
         // Call Keycloak to reset password
         Map<String, String> keycloakResponse = keycloakClient.regenerateAdminPassword(realmName, adminUsername);
@@ -103,14 +103,14 @@ public class RealmProvisioningService {
 
     private void validateRealmName(String realmName) {
         if (realmName == null || !realmName.matches("^mdental-[a-z0-9-]+$")) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                     "Realm name must start with 'mdental-' followed by lowercase letters, numbers, and hyphens");
         }
     }
 
     private void validateClinicSlug(String clinicSlug) {
         if (clinicSlug == null || !clinicSlug.matches("^[a-z0-9-]+$")) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                     "Clinic slug must contain only lowercase letters, numbers, and hyphens");
         }
     }

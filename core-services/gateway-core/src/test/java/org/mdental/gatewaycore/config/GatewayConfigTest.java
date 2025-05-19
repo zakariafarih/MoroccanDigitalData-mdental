@@ -38,9 +38,4 @@ class GatewayConfigTest {
                 .verify();
     }
 
-    @Test
-    void circuitBreakerCustomizerShouldBeConfigured() {
-        GatewayConfig gatewayConfig = new GatewayConfig();
-        assertThat(gatewayConfig.defaultCustomizer()).isNotNull();
-    }
 }

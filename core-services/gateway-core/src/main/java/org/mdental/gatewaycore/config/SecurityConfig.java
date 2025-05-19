@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
@@ -42,7 +43,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/**", "/fallback/**").permitAll()
                         .pathMatchers("/auth/**").permitAll()
                         // Protected API endpoints
-                        .pathMatchers("/api/**").hasAuthority("SCOPE_api")
+                        .pathMatchers("/api/**").hasAnyAuthority("SCOPE_api", "ROLE_SUPER_ADMIN")
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

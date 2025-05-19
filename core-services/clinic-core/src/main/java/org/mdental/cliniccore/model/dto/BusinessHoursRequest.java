@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.mdental.commons.exception.BaseException;
+import org.mdental.commons.model.ErrorCode;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -30,7 +32,13 @@ public class BusinessHoursRequest {
     // Custom validation to ensure open time is before close time
     public void validate() {
         if (openTime != null && closeTime != null && !openTime.isBefore(closeTime)) {
-            throw new IllegalArgumentException("Open time must be before close time");
+            throw new ValidationException("Open time must be before close time");
+        }
+    }
+
+    public static class ValidationException extends BaseException {
+        public ValidationException(String message) {
+            super(message, ErrorCode.VALIDATION_ERROR);
         }
     }
 }

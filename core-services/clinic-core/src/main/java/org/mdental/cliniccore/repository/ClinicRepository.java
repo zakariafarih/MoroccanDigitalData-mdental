@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ClinicRepository extends JpaRepository<Clinic, UUID> {
+public interface ClinicRepository extends TenantAwareRepository<Clinic, UUID> {
 
     @Query("SELECT c FROM Clinic c WHERE c.realm = :realm AND c.deletedAt IS NULL")
     Optional<Clinic> findByRealm(@Param("realm") String realm);
@@ -35,4 +35,9 @@ public interface ClinicRepository extends JpaRepository<Clinic, UUID> {
     @EntityGraph(attributePaths = {"contactInfos", "addresses", "businessHours", "holidays"})
     @Query("SELECT c FROM Clinic c WHERE c.id = :id")
     Optional<Clinic> findByIdWithAllRelationships(@Param("id") UUID id);
+
+    @Override
+    default List<Clinic> findAllByClinicRealm(String realm) {
+        return findByRealm(realm).stream().toList();
+    }
 }

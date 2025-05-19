@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.mdental.cliniccore.model.entity.ContactInfo;
+import org.mdental.commons.exception.BaseException;
+import org.mdental.commons.model.ErrorCode;
 
 @Data
 @Builder
@@ -28,13 +30,19 @@ public class ContactInfoRequest {
     // Custom validation logic based on type
     public void validate() {
         if (type == ContactInfo.ContactType.EMAIL && !value.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
-            throw new IllegalArgumentException("Invalid email format");
+            throw new ValidationException("Invalid email format");
         }
         if (type == ContactInfo.ContactType.PHONE && !value.matches("^\\+?[0-9\\-\\s()]+$")) {
-            throw new IllegalArgumentException("Invalid phone format");
+            throw new ValidationException("Invalid phone format");
         }
         if (type == ContactInfo.ContactType.WEBSITE && !value.matches("^(http|https)://.*")) {
-            throw new IllegalArgumentException("Website must start with http:// or https://");
+            throw new ValidationException("Website must start with http:// or https://");
+        }
+    }
+
+    public static class ValidationException extends BaseException {
+        public ValidationException(String message) {
+            super(message, ErrorCode.VALIDATION_ERROR);
         }
     }
 }

@@ -12,7 +12,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,7 +19,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @MappedSuperclass
-@EntityListeners({AuditingEntityListener.class, BaseEntity.SoftDeleteListener.class})
+@EntityListeners(AuditingEntityListener.class)
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -66,19 +65,5 @@ public abstract class BaseEntity {
     public void softDelete(String deletedBy) {
         this.deletedAt = Instant.now();
         this.deletedBy = deletedBy;
-    }
-
-    /**
-     * Listener to handle soft delete actions
-     */
-    public static class SoftDeleteListener {
-        @PreRemove
-        public void preRemove(BaseEntity entity) {
-            entity.deletedAt = Instant.now();
-            entity.deletedBy = SecurityContextHolder.getContext().getAuthentication() != null
-                    && SecurityContextHolder.getContext().getAuthentication().isAuthenticated()
-                    ? SecurityContextHolder.getContext().getAuthentication().getName()
-                    : "system";
-        }
     }
 }

@@ -25,17 +25,14 @@ public class DynamicIssuerJwtDecoder implements JwtDecoder {
         JwtDecoder decoder = cache.computeIfAbsent(issuer, this::buildDecoder);
         try {
             Jwt jwt = decoder.decode(token);
-            // wicket: in your test the mock will return null, so explicitly treat that as an error
             if (jwt == null) {
-                throw new JwtException("Decoded JWT is null");
+                throw new BadJwtException("Decoded JWT is null - unable to process token");
             }
             return jwt;
         } catch (JwtException e) {
-            // re-throw so the test’s catch sees it
             throw e;
         } catch (Exception e) {
-            // wrap any other exception
-            throw new JwtException("Failed to decode JWT", e);
+            throw new BadJwtException("Failed to decode JWT: " + e.getMessage(), e);
         }
     }
 

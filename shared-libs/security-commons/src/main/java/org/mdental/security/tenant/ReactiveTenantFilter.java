@@ -2,6 +2,8 @@ package org.mdental.security.tenant;
 
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.commons.constants.MdentalHeaders;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -10,6 +12,8 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Slf4j
+@Component
+@Order(10) // High precedence to ensure it runs before security filters
 public class ReactiveTenantFilter implements WebFilter {
 
     @Override

@@ -2,13 +2,17 @@ package org.mdental.cliniccore.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mdental.authcore.api.dto.CreateRealmRequest;
+import org.mdental.authcore.api.dto.RealmResponse;
 import org.mdental.cliniccore.client.AuthCoreClient;
+import org.mdental.cliniccore.event.ClinicEvent;
 import org.mdental.cliniccore.model.dto.CreateClinicRequest;
 import org.mdental.cliniccore.model.entity.Clinic;
 import org.mdental.commons.exception.BaseException;
 import org.mdental.commons.model.ApiResponse;
 import org.mdental.commons.model.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +23,7 @@ public class ClinicProvisioningService {
 
     private final ClinicService clinicService;
     private final AuthCoreClient authCoreClient;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Value("${INTERNAL_API_TOKEN:internal-api-token-placeholder}")
     private String internalApiToken;
@@ -51,7 +56,14 @@ public class ClinicProvisioningService {
             clinic.setKcAdminUser(realmInfo.getKcRealmAdminUser());
             clinic.setKcTmpPassword(realmInfo.getTmpPassword());
 
-            return clinicService.save(clinic);
+            clinic = clinicService.save(clinic);
+
+            // 4. Publish clinic created event for CDC
+            applicationEventPublisher.publishEvent(new ClinicEvent(
+                    this, clinic, ClinicEvent.EventType.CREATED
+            ));
+
+            return clinic;
         } catch (Exception e) {
             log.error("Error during realm provisioning", e);
             // Any exception triggers transaction rollback

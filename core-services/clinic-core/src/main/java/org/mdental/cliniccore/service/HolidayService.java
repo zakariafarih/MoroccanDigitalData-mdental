@@ -15,7 +15,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -31,7 +33,18 @@ public class HolidayService {
         log.debug("Fetching holidays for clinic ID: {}", clinicId);
         // Verify clinic exists
         clinicService.getClinicById(clinicId);
-        return holidayRepository.findByClinicId(clinicId);
+
+        // Get fixed-date holidays
+        List<Holiday> fixedHolidays = holidayRepository.findByClinicId(clinicId);
+
+        // Get recurring holidays
+        List<Holiday> recurringHolidays = holidayRepository.findRecurringHolidaysByClinicId(clinicId);
+
+        // Combine both lists
+        Set<Holiday> allHolidays = new HashSet<>(fixedHolidays);
+        allHolidays.addAll(recurringHolidays);
+
+        return List.copyOf(allHolidays);
     }
 
     @Transactional(readOnly = true)
@@ -39,7 +52,18 @@ public class HolidayService {
         log.debug("Fetching holidays for clinic ID: {} between {} and {}", clinicId, startDate, endDate);
         // Verify clinic exists
         clinicService.getClinicById(clinicId);
-        return holidayRepository.findByClinicIdAndDateBetween(clinicId, startDate, endDate);
+
+        // Get fixed-date holidays in the range
+        List<Holiday> fixedHolidays = holidayRepository.findByClinicIdAndDateBetween(clinicId, startDate, endDate);
+
+        // Get recurring holidays
+        List<Holiday> recurringHolidays = holidayRepository.findRecurringHolidaysByClinicId(clinicId);
+
+        // Combine both lists
+        Set<Holiday> allHolidays = new HashSet<>(fixedHolidays);
+        allHolidays.addAll(recurringHolidays);
+
+        return List.copyOf(allHolidays);
     }
 
     @Transactional(readOnly = true)

@@ -32,37 +32,29 @@ public class JwtForwardingFilter implements GlobalFilter, Ordered {
     private ServerWebExchange extractAndForwardJwtClaims(ServerWebExchange exchange, Jwt jwt) {
         ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate();
 
-        // Forward username from JWT
         String username = jwt.getClaimAsString("preferred_username");
         if (username != null) {
             requestBuilder.header("X-User-Username", username);
         }
 
-        // Forward clinicId from JWT if available
         String clinicId = jwt.getClaimAsString("clinicId");
         if (clinicId != null) {
             requestBuilder.header("X-User-ClinicId", clinicId);
         }
 
-        // Forward user email from JWT if available
         String email = jwt.getClaimAsString("email");
         if (email != null) {
             requestBuilder.header("X-User-Email", email);
         }
 
-        // Add JWT subject
         requestBuilder.header("X-User-Subject", jwt.getSubject());
-
-        // Add the issuer (realm info)
         requestBuilder.header("X-User-Issuer", jwt.getIssuer().toString());
 
-        // Create a new exchange with the updated request
         return exchange.mutate().request(requestBuilder.build()).build();
     }
 
     @Override
     public int getOrder() {
-        // Execute after security filters but before routing
-        return 1;
+        return -99; // Just after authentication
     }
 }

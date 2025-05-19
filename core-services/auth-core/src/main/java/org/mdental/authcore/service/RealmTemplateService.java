@@ -1,7 +1,8 @@
 package org.mdental.authcore.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
@@ -17,6 +18,9 @@ public class RealmTemplateService {
 
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("__([A-Z_]+)__");
 
+    @Value("classpath:templates/realm-template.json")
+    private Resource templateResource;
+
     /**
      * Loads the realm template from classpath and substitutes placeholders
      *
@@ -25,8 +29,7 @@ public class RealmTemplateService {
      */
     public String loadAndProcessTemplate(Map<String, String> variables) {
         try {
-            ClassPathResource resource = new ClassPathResource("templates/realm-template.json");
-            String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+            String template = StreamUtils.copyToString(templateResource.getInputStream(), StandardCharsets.UTF_8);
 
             return substituteVariables(template, variables);
         } catch (IOException e) {

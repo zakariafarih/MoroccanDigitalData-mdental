@@ -40,6 +40,7 @@ public class FallbackController {
 
         Map<String, Object> error = new HashMap<>();
         error.put("code", "SERVICE_UNAVAILABLE");
+        error.put("message", "Service \"" + service + "\" is unavailable");
         error.put("service", service);
         error.put("requestId", requestId);
         error.put("timestamp", DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
