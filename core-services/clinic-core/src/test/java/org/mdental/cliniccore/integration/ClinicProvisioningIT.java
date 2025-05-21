@@ -1,6 +1,7 @@
 package org.mdental.cliniccore.integration;
 
 import org.junit.jupiter.api.Test;
+import org.mdental.authcore.api.dto.RealmResponse;
 import org.mdental.cliniccore.client.AuthCoreClient;
 import org.mdental.cliniccore.model.dto.CreateClinicRequest;
 import org.mdental.cliniccore.model.entity.Clinic;
@@ -76,13 +77,13 @@ public class ClinicProvisioningIT {
     void testCreateClinicWithRealm() {
         // Arrange
         // Mock the auth-core client response
-        org.mdental.authcore.model.dto.RealmResponse realmResponse = new org.mdental.authcore.model.dto.RealmResponse();
+        RealmResponse realmResponse = new RealmResponse();
         realmResponse.setRealmName("mdental-test-clinic");
         realmResponse.setIssuer("http://localhost:8080/realms/mdental-test-clinic");
         realmResponse.setKcRealmAdminUser("admin");
         realmResponse.setTmpPassword("tempPwd123");
 
-        ApiResponse<org.mdental.authcore.model.dto.RealmResponse> apiResponse =
+        ApiResponse<RealmResponse> apiResponse =
                 ApiResponse.success(realmResponse);
 
         when(authCoreClient.createRealm(any())).thenReturn(apiResponse);

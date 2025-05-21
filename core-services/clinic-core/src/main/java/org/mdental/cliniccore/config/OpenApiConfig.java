@@ -5,6 +5,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import org.springdoc.core.properties.SwaggerUiConfigParameters;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,5 +27,17 @@ public class OpenApiConfig {
                         .license(new License()
                                 .name("Private License")
                                 .url("https://mdental.org/license")));
+    }
+
+    /**
+     * This bean tells the Swagger-UI where to post your spec for validation
+     * and enables the Try-It-Out button.
+     */
+    @Autowired
+    public void customizeSwaggerUi(SwaggerUiConfigParameters config) {
+        // point at the online Swagger validator
+        config.setValidatorUrl("https://validator.swagger.io/validator");
+        // turn on Try-It-Out by default
+        config.setTryItOutEnabled(true);
     }
 }

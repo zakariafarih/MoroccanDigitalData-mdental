@@ -23,7 +23,6 @@ import java.util.UUID;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "clinicId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "clinic_id = :clinicId")
 public class Patient extends BaseEntity {
 

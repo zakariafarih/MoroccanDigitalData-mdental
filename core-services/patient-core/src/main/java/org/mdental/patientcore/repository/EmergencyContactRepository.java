@@ -18,7 +18,7 @@ public interface EmergencyContactRepository extends JpaRepository<EmergencyConta
 
     Optional<EmergencyContact> findByPatientIdAndId(UUID patientId, UUID id);
 
-    List<EmergencyContact> findByPatientIdAndPrimaryIsTrue(UUID patientId);
+    List<EmergencyContact> findByPatientIdAndIsPrimaryTrue(UUID patientId);
 
     @Modifying
     @Query("UPDATE EmergencyContact e SET e.isPrimary = false WHERE e.patientId = :patientId AND e.isPrimary = true")

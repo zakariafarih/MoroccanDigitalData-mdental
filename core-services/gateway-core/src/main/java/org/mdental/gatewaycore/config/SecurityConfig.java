@@ -9,20 +9,17 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,87 +27,72 @@ import java.util.stream.Stream;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String issuerUri;
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeExchange(exchanges -> exchanges
-                        // Public endpoints
-                        .pathMatchers("/actuator/**", "/fallback/**").permitAll()
-                        .pathMatchers("/auth/**").permitAll()
-                        // Protected API endpoints
-                        .pathMatchers("/api/**").hasAnyAuthority("SCOPE_api", "ROLE_SUPER_ADMIN")
-                        .anyExchange().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(new ReactiveJwtAuthenticationConverterAdapter(keycloakJwtAuthenticationConverter()))
-                        )
-                )
-                .build();
+    public ReactiveJwtDecoder reactiveJwtDecoder() {
+        return NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
+    /**
+     * Converts both scopes and Keycloak roles into GrantedAuthorities.
+     */
     @Bean
     public JwtAuthenticationConverter keycloakJwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        JwtGrantedAuthoritiesConverter defaultGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        JwtGrantedAuthoritiesConverter defaultConverter = new JwtGrantedAuthoritiesConverter();
 
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Collection<GrantedAuthority> defaultAuthorities = defaultGrantedAuthoritiesConverter.convert(jwt);
-            Collection<GrantedAuthority> keycloakAuthorities = extractKeycloakRoles(jwt);
+            Collection<GrantedAuthority> defaultAuthorities = defaultConverter.convert(jwt);
 
-            return Stream.concat(
-                            defaultAuthorities.stream(),
-                            keycloakAuthorities.stream()
-                    )
+            Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+            @SuppressWarnings("unchecked")
+            Collection<String> roles = realmAccess != null
+                    ? (Collection<String>) realmAccess.getOrDefault("roles", List.of())
+                    : List.of();
+
+            Collection<GrantedAuthority> keycloakRoles = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toSet());
+
+            return Stream.concat(defaultAuthorities.stream(), keycloakRoles.stream())
                     .collect(Collectors.toSet());
         });
 
         return converter;
     }
 
-    private Collection<GrantedAuthority> extractKeycloakRoles(Jwt jwt) {
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if (realmAccess == null || realmAccess.isEmpty()) {
-            return Collections.emptyList();
-        }
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, ReactiveJwtDecoder jwtDecoder) {
+        var adapter = new ReactiveJwtAuthenticationConverterAdapter(keycloakJwtAuthenticationConverter());
 
-        Object rolesObj = realmAccess.get("roles");
-        if (!(rolesObj instanceof Collection)) {
-            return Collections.emptyList();
-        }
-
-        @SuppressWarnings("unchecked")
-        Collection<String> roles = (Collection<String>) rolesObj;
-
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toList());
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/actuator/**", "/auth/**", "/fallback/**").permitAll()
+                        .pathMatchers("/api/**").hasAnyAuthority("SCOPE_api", "ROLE_SUPER_ADMIN")
+                        .anyExchange().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtDecoder(jwtDecoder)
+                                .jwtAuthenticationConverter(adapter)
+                        )
+                )
+                .build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // Configure appropriately in production
-        configuration.setAllowedMethods(
-                Arrays.asList(
-                        HttpMethod.GET.name(),
-                        HttpMethod.POST.name(),
-                        HttpMethod.PUT.name(),
-                        HttpMethod.DELETE.name(),
-                        HttpMethod.OPTIONS.name(),
-                        HttpMethod.PATCH.name()
-                )
-        );
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setMaxAge(3600L);
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("*")); // Allow all for now (you should restrict this in production)
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 }

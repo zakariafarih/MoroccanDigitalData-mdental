@@ -7,5 +7,4 @@ import org.mapstruct.ReportingPolicy;
         componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
-public interface MapStructConfig {
-}
+public interface MapStructConfig { }

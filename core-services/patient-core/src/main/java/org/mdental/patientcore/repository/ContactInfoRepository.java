@@ -25,9 +25,9 @@ public interface ContactInfoRepository extends JpaRepository<ContactInfo, UUID> 
 
     List<ContactInfo> findByPatientIdAndType(UUID patientId, ContactType type);
 
-    List<ContactInfo> findByPatientIdAndPrimaryIsTrue(UUID patientId);
+    List<ContactInfo> findByPatientIdAndIsPrimaryTrue(UUID patientId);
 
-    List<ContactInfo> findByPatientIdAndTypeAndPrimaryIsTrue(UUID patientId, ContactType type);
+    List<ContactInfo> findByPatientIdAndTypeAndIsPrimaryTrue(UUID patientId, ContactType type);
 
     @Modifying
     @Query("UPDATE ContactInfo c SET c.isPrimary = false WHERE c.patientId = :patientId AND c.type = :type AND c.isPrimary = true")

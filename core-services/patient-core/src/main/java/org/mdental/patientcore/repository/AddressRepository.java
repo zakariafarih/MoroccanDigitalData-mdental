@@ -25,9 +25,9 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
 
     List<Address> findByPatientIdAndType(UUID patientId, AddressType type);
 
-    List<Address> findByPatientIdAndPrimaryIsTrue(UUID patientId);
+    List<Address> findByPatientIdAndIsPrimaryTrue(UUID patientId);
 
-    List<Address> findByPatientIdAndTypeAndPrimaryIsTrue(UUID patientId, AddressType type);
+    List<Address> findByPatientIdAndTypeAndIsPrimaryTrue(UUID patientId, AddressType type);
 
     @Modifying
     @Query("UPDATE Address a SET a.isPrimary = false WHERE a.patientId = :patientId AND a.type = :type AND a.isPrimary = true")
