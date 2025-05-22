@@ -24,4 +24,13 @@ public class Realm extends BaseEntity {
 
     @Column(name = "admin_username", nullable = false)
     private String adminUsername;
+
+    @Column(name = "admin_tmp_password")
+    private String adminTmpPassword;
+
+    @Column(name = "service_client_id")
+    private String serviceClientId;
+
+    @Column(name = "service_client_secret")
+    private String serviceClientSecret;
 }

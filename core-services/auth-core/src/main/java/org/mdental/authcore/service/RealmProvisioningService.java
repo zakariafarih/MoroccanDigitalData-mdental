@@ -21,6 +21,7 @@ public class RealmProvisioningService {
     private final KeycloakClient keycloakClient;
     private final RealmRepository realmRepository;
     private final OutboxService outboxService;
+    private final PasswordGenerator passwordGenerator;
 
     @Transactional
     public RealmResponse createRealm(String realmName, String clinicSlug) {
@@ -41,6 +42,9 @@ public class RealmProvisioningService {
                 .clinicSlug(clinicSlug)
                 .issuer(keycloakResponse.get("issuer"))
                 .adminUsername(keycloakResponse.get("kcRealmAdminUser"))
+                .adminTmpPassword(keycloakResponse.get("tmpPassword"))
+                .serviceClientId(keycloakResponse.get("serviceClientId"))
+                .serviceClientSecret(keycloakResponse.get("serviceClientSecret"))
                 .createdAt(Instant.now())
                 .build();
 
@@ -77,12 +81,11 @@ public class RealmProvisioningService {
         // Call Keycloak to reset password
         Map<String, String> keycloakResponse = keycloakClient.regenerateAdminPassword(realmName, adminUsername);
 
-        // Update realm in database if admin username changed
-        if (!adminUsername.equals(realm.getAdminUsername())) {
-            realm.setAdminUsername(adminUsername);
-            realm.setUpdatedAt(Instant.now());
-            realmRepository.save(realm);
-        }
+        // Update realm in database
+        realm.setAdminUsername(adminUsername);
+        realm.setAdminTmpPassword(keycloakResponse.get("tmpPassword"));
+        realm.setUpdatedAt(Instant.now());
+        realmRepository.save(realm);
 
         // Publish event via outbox
         outboxService.saveEvent(

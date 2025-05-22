@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface RealmRepository extends JpaRepository<Realm, UUID> {
 
     Optional<Realm> findByName(String name);
+
+    Optional<Realm> findByClinicSlug(String clinicSlug);
 }
