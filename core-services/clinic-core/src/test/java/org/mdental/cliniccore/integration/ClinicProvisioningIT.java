@@ -79,7 +79,7 @@ public class ClinicProvisioningIT {
         // Mock the auth-core client response
         RealmResponse realmResponse = new RealmResponse();
         realmResponse.setRealmName("mdental-test-clinic");
-        realmResponse.setIssuer("http://localhost:8080/realms/mdental-test-clinic");
+        realmResponse.setIssuer("http://localhost:9080/realms/mdental-test-clinic");
         realmResponse.setKcRealmAdminUser("admin");
         realmResponse.setTmpPassword("tempPwd123");
 

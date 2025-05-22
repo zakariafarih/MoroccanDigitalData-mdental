@@ -1,0 +1,20 @@
+{
+  "realm": "mdental-__CLINIC_NAME__",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "CLINIC_ADMIN", "description": "Clinic administrator with full access" },
+      { "name": "DOCTOR", "description": "Doctor with clinical access" },
+      { "name": "RECEPTIONIST", "description": "Front desk receptionist" },
+      { "name": "PATIENT", "description": "Patient with limited access" }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "admin123", "temporary": true }],
+      "realmRoles": [ "CLINIC_ADMIN" ]
+    }
+  ]
+}

@@ -36,9 +36,9 @@ class KeycloakClientTest {
 
     @BeforeEach
     void setUp() {
-        when(keycloakProperties.getBaseUrl()).thenReturn("http://localhost:8080");
-        when(keycloakProperties.getAdminUrl()).thenReturn("http://localhost:8080/admin/realms");
-        when(keycloakProperties.getTokenUrl()).thenReturn("http://localhost:8080/realms/master/protocol/openid-connect/token");
+        when(keycloakProperties.getBaseUrl()).thenReturn("http://localhost:9080");
+        when(keycloakProperties.getAdminUrl()).thenReturn("http://localhost:9080/admin/realms");
+        when(keycloakProperties.getTokenUrl()).thenReturn("http://localhost:9080/realms/master/protocol/openid-connect/token");
         when(keycloakProperties.getAdminUsername()).thenReturn("admin");
         when(keycloakProperties.getAdminPassword()).thenReturn("admin");
     }
@@ -48,7 +48,7 @@ class KeycloakClientTest {
         // Mock token response
         Map<String, Object> tokenResponse = Map.of("access_token", "mock-token");
         when(restTemplate.exchange(
-                eq("http://localhost:8080/realms/master/protocol/openid-connect/token"),
+                eq("http://localhost:9080/realms/master/protocol/openid-connect/token"),
                 eq(HttpMethod.POST),
                 any(HttpEntity.class),
                 eq(Map.class)

@@ -38,7 +38,7 @@ public class AuditingIntegrationTest {
         Realm realm = Realm.builder()
                 .name("mdental-test-" + System.currentTimeMillis())
                 .clinicSlug("test-" + System.currentTimeMillis())
-                .issuer("http://localhost:8080/realms/test")
+                .issuer("http://localhost:9080/realms/test")
                 .adminUsername("admin")
                 .build();
 

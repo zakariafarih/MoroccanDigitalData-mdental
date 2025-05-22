@@ -41,7 +41,7 @@ class RealmAdminControllerTest {
 
         RealmResponse mockResponse = RealmResponse.builder()
                 .realmName("mdental-test")
-                .issuer("http://localhost:8080/realms/mdental-test")
+                .issuer("http://localhost:9080/realms/mdental-test")
                 .kcRealmAdminUser("admin")
                 .tmpPassword("password123")
                 .build();
@@ -56,7 +56,7 @@ class RealmAdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.realmName").value("mdental-test"))
-                .andExpect(jsonPath("$.data.issuer").value("http://localhost:8080/realms/mdental-test"))
+                .andExpect(jsonPath("$.data.issuer").value("http://localhost:9080/realms/mdental-test"))
                 .andExpect(jsonPath("$.data.kcRealmAdminUser").value("admin"))
                 .andExpect(jsonPath("$.data.tmpPassword").value("password123"));
     }

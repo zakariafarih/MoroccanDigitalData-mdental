@@ -1,0 +1,2505 @@
+{
+  "info": {
+    "_postman_id": "d2c3e5f7-9a8b-4c6d-8e1f-1a3b5c7d9e0f",
+    "name": "MDental SaaS API",
+    "description": "A complete API collection for all MDental SaaS microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth Core",
+      "item": [
+        {
+          "name": "Login",
+          "item": [
+            {
+              "name": "Get User Info",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{auth-core}}/me",
+                  "host": [
+                    "{{auth-core}}"
+                  ],
+                  "path": [
+                    "me"
+                  ]
+                },
+                "description": "Returns information about the authenticated user based on JWT"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Get Access Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "mdental-client",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:9080/realms/platform/protocol/openid-connect/token",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "realms",
+                "platform",
+                "protocol",
+                "openid-connect",
+                "token"
+              ]
+            },
+            "description": "Get an access token from Keycloak to use with other API requests"
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "item": [
+            {
+              "name": "Create Realm",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"realm\": \"mdental-test-clinic\",\n    \"clinicSlug\": \"test-clinic\"\n}"
+                },
+                "url": {
+                  "raw": "{{auth-core}}/realms",
+                  "host": [
+                    "{{auth-core}}"
+                  ],
+                  "path": [
+                    "realms"
+                  ]
+                },
+                "description": "Creates a new Keycloak realm for a clinic (requires SUPER_ADMIN role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Regenerate Admin Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"adminUsername\": \"admin\"\n}"
+                },
+                "url": {
+                  "raw": "{{auth-core}}/realms/{{realmName}}/regenerate-password",
+                  "host": [
+                    "{{auth-core}}"
+                  ],
+                  "path": [
+                    "realms",
+                    "{{realmName}}",
+                    "regenerate-password"
+                  ]
+                },
+                "description": "Regenerates the admin password for a realm (requires SUPER_ADMIN role)"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clinic Core",
+      "item": [
+        {
+          "name": "Clinic CRUD",
+          "item": [
+            {
+              "name": "Get All Clinics",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics?name=&page=0&size=20&sort=name,asc",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics"
+                  ],
+                  "query": [
+                    {
+                      "key": "name",
+                      "value": ""
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "name,asc"
+                    }
+                  ]
+                },
+                "description": "Returns a paginated list of clinics"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Clinic by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}"
+                  ]
+                },
+                "description": "Returns the full clinic profile including related entities"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Clinic",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Test Clinic\",\n    \"slug\": \"test-clinic\",\n    \"realm\": \"mdental-test-clinic\",\n    \"legalName\": \"Test Clinic LLC\",\n    \"taxId\": \"123456789\",\n    \"description\": \"A test dental clinic\",\n    \"logoUrl\": \"https://example.com/logo.png\",\n    \"primaryColor\": \"#336699\",\n    \"secondaryColor\": \"#99CCFF\",\n    \"licenseNumber\": \"DEN-12345\",\n    \"licenseExpiry\": \"2025-12-31\",\n    \"privacyPolicyUrl\": \"https://example.com/privacy\",\n    \"defaultTimeZone\": \"Africa/Casablanca\",\n    \"defaultCurrency\": \"MAD\",\n    \"locale\": \"fr-MA\"\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics"
+                  ]
+                },
+                "description": "Creates a new clinic with the provided details"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Clinic",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Updated Test Clinic\",\n    \"slug\": \"test-clinic\",\n    \"legalName\": \"Test Clinic LLC Updated\",\n    \"taxId\": \"987654321\",\n    \"description\": \"An updated test dental clinic\",\n    \"logoUrl\": \"https://example.com/new-logo.png\",\n    \"primaryColor\": \"#003366\",\n    \"secondaryColor\": \"#6699CC\",\n    \"licenseNumber\": \"DEN-54321\",\n    \"licenseExpiry\": \"2026-12-31\",\n    \"privacyPolicyUrl\": \"https://example.com/privacy-updated\",\n    \"defaultTimeZone\": \"Africa/Casablanca\",\n    \"defaultCurrency\": \"MAD\",\n    \"locale\": \"fr-MA\",\n    \"status\": \"ACTIVE\"\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}"
+                  ]
+                },
+                "description": "Updates an existing clinic with the provided details"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Clinic Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/status?status=INACTIVE",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "status"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "INACTIVE"
+                    }
+                  ]
+                },
+                "description": "Updates the status of an existing clinic (ACTIVE, INACTIVE, SUSPENDED)"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Clinic",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}"
+                  ]
+                },
+                "description": "Deletes an existing clinic and all related data"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Addresses",
+          "item": [
+            {
+              "name": "Get All Addresses",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/addresses",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "addresses"
+                  ]
+                },
+                "description": "Returns all addresses for the specified clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Address by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/addresses/{{addressId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
+                },
+                "description": "Returns the address with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"PHYSICAL\",\n    \"street\": \"123 Main St\",\n    \"city\": \"Casablanca\",\n    \"state\": \"Casablanca-Settat\",\n    \"zip\": \"20000\",\n    \"country\": \"Morocco\",\n    \"latitude\": 33.5731,\n    \"longitude\": -7.5898,\n    \"isPrimary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/addresses",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "addresses"
+                  ]
+                },
+                "description": "Creates a new address for the clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Address",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"PHYSICAL\",\n    \"street\": \"456 Updated St\",\n    \"city\": \"Rabat\",\n    \"state\": \"Rabat-Salé-Kénitra\",\n    \"zip\": \"10000\",\n    \"country\": \"Morocco\",\n    \"latitude\": 34.0209,\n    \"longitude\": -6.8416,\n    \"isPrimary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/addresses/{{addressId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
+                },
+                "description": "Updates an existing address"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Address",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/addresses/{{addressId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
+                },
+                "description": "Deletes an address"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Contact Info",
+          "item": [
+            {
+              "name": "Get All Contact Info",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/contacts",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "contacts"
+                  ]
+                },
+                "description": "Returns all contact information for the specified clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Contact Info by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/contacts/{{contactId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Returns the contact information with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Contact Info",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"PHONE\",\n    \"label\": \"Main Office\",\n    \"value\": \"+212-522-123456\",\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/contacts",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "contacts"
+                  ]
+                },
+                "description": "Creates new contact information for the clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Contact Info",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"PHONE\",\n    \"label\": \"Updated Office\",\n    \"value\": \"+212-522-654321\",\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/contacts/{{contactId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Updates existing contact information"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Contact Info",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/contacts/{{contactId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Deletes contact information"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Business Hours",
+          "item": [
+            {
+              "name": "Get All Business Hours",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/hours",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "hours"
+                  ]
+                },
+                "description": "Returns all business hours for the specified clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Business Hours by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/hours/{{hoursId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "hours",
+                    "{{hoursId}}"
+                  ]
+                },
+                "description": "Returns the business hours with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Business Hours",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"dayOfWeek\": \"MONDAY\",\n    \"openTime\": \"09:00:00\",\n    \"closeTime\": \"17:00:00\",\n    \"active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/hours",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "hours"
+                  ]
+                },
+                "description": "Creates new business hours for the clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Business Hours",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"dayOfWeek\": \"MONDAY\",\n    \"openTime\": \"08:30:00\",\n    \"closeTime\": \"18:00:00\",\n    \"active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/hours/{{hoursId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "hours",
+                    "{{hoursId}}"
+                  ]
+                },
+                "description": "Updates existing business hours"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Business Hours",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/hours/{{hoursId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "hours",
+                    "{{hoursId}}"
+                  ]
+                },
+                "description": "Deletes business hours"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Holidays",
+          "item": [
+            {
+              "name": "Get All Holidays",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/holidays",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "holidays"
+                  ]
+                },
+                "description": "Returns all holidays for the specified clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Holidays In Date Range",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/holidays/range?startDate=2023-01-01&endDate=2023-12-31",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "holidays",
+                    "range"
+                  ],
+                  "query": [
+                    {
+                      "key": "startDate",
+                      "value": "2023-01-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2023-12-31"
+                    }
+                  ]
+                },
+                "description": "Returns holidays for the specified clinic within a date range"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Holiday by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/holidays/{{holidayId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "holidays",
+                    "{{holidayId}}"
+                  ]
+                },
+                "description": "Returns the holiday with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Holiday",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"date\": \"2023-01-01\",\n    \"description\": \"New Year's Day\",\n    \"recurring\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/holidays",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "holidays"
+                  ]
+                },
+                "description": "Creates a new holiday for the clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Holiday",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"date\": \"2023-01-01\",\n    \"description\": \"Updated New Year's Holiday\",\n    \"recurring\": true\n}"
+                },
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/holidays/{{holidayId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "holidays",
+                    "{{holidayId}}"
+                  ]
+                },
+                "description": "Updates an existing holiday"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Holiday",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{clinic-core}}/api/clinics/{{clinicId}}/holidays/{{holidayId}}",
+                  "host": [
+                    "{{clinic-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "holidays",
+                    "{{holidayId}}"
+                  ]
+                },
+                "description": "Deletes a holiday"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Patient Core",
+      "item": [
+        {
+          "name": "Patients",
+          "item": [
+            {
+              "name": "Get All Patients",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients?page=0&size=20&sort=lastName",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "lastName"
+                    }
+                  ]
+                },
+                "description": "Returns a paginated list of patients for the clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Patient Summaries",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/summary?page=0&size=20&sort=lastName",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "summary"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "lastName"
+                    }
+                  ]
+                },
+                "description": "Returns summary information about patients for the clinic"
+              },
+              "response": []
+            },
+            {
+              "name": "Search Patients",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/search?term=john&page=0&size=20",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "search"
+                  ],
+                  "query": [
+                    {
+                      "key": "term",
+                      "value": "john"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Searches for patients by name"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Patients By Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/status/ACTIVE",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "status",
+                    "ACTIVE"
+                  ]
+                },
+                "description": "Returns patients with the specified status (ACTIVE, INACTIVE, DECEASED)"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Patient By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}"
+                  ]
+                },
+                "description": "Returns detailed information about a specific patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Patient",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"middleName\": \"Michael\",\n    \"dateOfBirth\": \"1980-01-15\",\n    \"gender\": \"MALE\",\n    \"maritalStatus\": \"MARRIED\",\n    \"preferredLanguage\": \"en\",\n    \"status\": \"ACTIVE\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients"
+                  ]
+                },
+                "description": "Creates a new patient record"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Patient",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"middleName\": \"Robert\",\n    \"dateOfBirth\": \"1980-01-15\",\n    \"gender\": \"MALE\",\n    \"maritalStatus\": \"DIVORCED\",\n    \"preferredLanguage\": \"fr\",\n    \"status\": \"ACTIVE\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}"
+                  ]
+                },
+                "description": "Updates an existing patient record"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Patient",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}"
+                  ]
+                },
+                "description": "Soft deletes a patient record"
+              },
+              "response": []
+            },
+            {
+              "name": "Purge Patient (GDPR)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/purge",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "purge"
+                  ]
+                },
+                "description": "Permanently deletes a patient record (for GDPR compliance)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Patient Address",
+          "item": [
+            {
+              "name": "Get All Patient Addresses",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/addresses?page=0&size=20&sort=id",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "addresses"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "id"
+                    }
+                  ]
+                },
+                "description": "Returns all addresses for the specified patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Patient Address By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/addresses/{{addressId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
+                },
+                "description": "Returns the address with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Patient Address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"HOME\",\n    \"street\": \"123 Main St\",\n    \"city\": \"Casablanca\",\n    \"state\": \"Casablanca-Settat\",\n    \"zip\": \"20000\",\n    \"country\": \"Morocco\",\n    \"lat\": 33.5731,\n    \"lng\": -7.5898,\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/addresses",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "addresses"
+                  ]
+                },
+                "description": "Creates a new address for the patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Patient Address",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"HOME\",\n    \"street\": \"456 Updated St\",\n    \"city\": \"Rabat\",\n    \"state\": \"Rabat-Salé-Kénitra\",\n    \"zip\": \"10000\",\n    \"country\": \"Morocco\",\n    \"lat\": 34.0209,\n    \"lng\": -6.8416,\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/addresses/{{addressId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
+                },
+                "description": "Updates an existing patient address"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Patient Address",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/addresses/{{addressId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "addresses",
+                    "{{addressId}}"
+                  ]
+                },
+                "description": "Deletes a patient address"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Patient Contact Info",
+          "item": [
+            {
+              "name": "Get All Patient Contact Info",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/contacts?page=0&size=20&sort=id",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "contacts"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "id"
+                    }
+                  ]
+                },
+                "description": "Returns all contact information for the specified patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Patient Contact Info By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/contacts/{{contactId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Returns the contact information with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Patient Contact Info",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"PHONE\",\n    \"label\": \"Mobile\",\n    \"value\": \"+212-666-123456\",\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/contacts",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "contacts"
+                  ]
+                },
+                "description": "Creates new contact information for the patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Patient Contact Info",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"PHONE\",\n    \"label\": \"Updated Mobile\",\n    \"value\": \"+212-666-654321\",\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/contacts/{{contactId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Updates existing patient contact information"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Patient Contact Info",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/contacts/{{contactId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Deletes patient contact information"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Patient Identifiers",
+          "item": [
+            {
+              "name": "Get All Patient Identifiers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/identifiers",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "identifiers"
+                  ]
+                },
+                "description": "Returns all identifiers for the specified patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Patient Identifier By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/identifiers/{{identifierId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "identifiers",
+                    "{{identifierId}}"
+                  ]
+                },
+                "description": "Returns the identifier with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Patient Identifier",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"NATIONAL_ID\",\n    \"value\": \"AB123456\",\n    \"issuer\": \"Ministry of Interior\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/identifiers",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "identifiers"
+                  ]
+                },
+                "description": "Creates a new identifier for the patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Patient Identifier",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"NATIONAL_ID\",\n    \"value\": \"CD654321\",\n    \"issuer\": \"Ministry of Interior (updated)\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/identifiers/{{identifierId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "identifiers",
+                    "{{identifierId}}"
+                  ]
+                },
+                "description": "Updates an existing patient identifier"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Patient Identifier",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/identifiers/{{identifierId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "identifiers",
+                    "{{identifierId}}"
+                  ]
+                },
+                "description": "Deletes a patient identifier"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Emergency Contacts",
+          "item": [
+            {
+              "name": "Get All Emergency Contacts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/emergency-contacts",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "emergency-contacts"
+                  ]
+                },
+                "description": "Returns all emergency contacts for the specified patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Emergency Contact By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/emergency-contacts/{{contactId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "emergency-contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Returns the emergency contact with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Emergency Contact",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Jane Doe\",\n    \"relationship\": \"Spouse\",\n    \"phone\": \"+212-666-123456\",\n    \"email\": \"jane.doe@example.com\",\n    \"primary\": true\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/emergency-contacts",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "emergency-contacts"
+                  ]
+                },
+                "description": "Creates a new emergency contact for the patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Emergency Contact",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Jane Smith\",\n    \"relationship\": \"Ex-Spouse\",\n    \"phone\": \"+212-666-654321\",\n    \"email\": \"jane.smith@example.com\",\n    \"primary\": false\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/emergency-contacts/{{contactId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "emergency-contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Updates an existing emergency contact"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Emergency Contact",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/emergency-contacts/{{contactId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "emergency-contacts",
+                    "{{contactId}}"
+                  ]
+                },
+                "description": "Deletes an emergency contact"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Consents",
+          "item": [
+            {
+              "name": "Get All Consents",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/consents",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "consents"
+                  ]
+                },
+                "description": "Returns all consents for the specified patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Consent By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/consents/{{consentId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "consents",
+                    "{{consentId}}"
+                  ]
+                },
+                "description": "Returns the consent with the specified ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Create or Update Consent",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"TREATMENT\",\n    \"granted\": true,\n    \"grantedBy\": \"Dr. Smith\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/consents",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "consents"
+                  ]
+                },
+                "description": "Creates or updates a consent for the patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Consent",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/consents/{{consentId}}",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "consents",
+                    "{{consentId}}"
+                  ]
+                },
+                "description": "Deletes a consent"
+              },
+              "response": []
+            },
+            {
+              "name": "Verify Consent",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/consents/verify/TREATMENT",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "consents",
+                    "verify",
+                    "TREATMENT"
+                  ]
+                },
+                "description": "Verifies if the patient has granted a specific consent (TREATMENT, DATA_SHARING, SMS, EMAIL_NOTIFICATION, MARKETING, RESEARCH, OTHER)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Portal",
+          "item": [
+            {
+              "name": "Register Portal Account",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"username\": \"patient@example.com\",\n    \"password\": \"SecurePassword123\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/portal/register",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "portal",
+                    "register"
+                  ]
+                },
+                "description": "Registers a new portal account for the patient"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Login Timestamp",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"username\": \"patient@example.com\",\n    \"password\": \"SecurePassword123\"\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/portal/login",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "portal",
+                    "login"
+                  ]
+                },
+                "description": "Updates the last login timestamp for the patient portal account"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Portal Preferences",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/portal/preferences",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "portal",
+                    "preferences"
+                  ]
+                },
+                "description": "Gets preferences for the patient portal account"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Portal Preferences",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"preferences\": {\n        \"theme\": \"dark\",\n        \"language\": \"fr-MA\",\n        \"emailNotifications\": \"true\",\n        \"smsNotifications\": \"false\"\n    }\n}"
+                },
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/portal/preferences",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "portal",
+                    "preferences"
+                  ]
+                },
+                "description": "Updates preferences for the patient portal account"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Portal Account",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{patient-core}}/api/clinics/{{clinicId}}/patients/{{patientId}}/portal",
+                  "host": [
+                    "{{patient-core}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinics",
+                    "{{clinicId}}",
+                    "patients",
+                    "{{patientId}}",
+                    "portal"
+                  ]
+                },
+                "description": "Deletes the patient portal account"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "clinicId",
+      "value": "clinic-123",
+      "type": "string"
+    },
+    {
+      "key": "patientId",
+      "value": "patient-123",
+      "type": "string"
+    },
+    {
+      "key": "addressId",
+      "value": "address-123",
+      "type": "string"
+    },
+    {
+      "key": "contactId",
+      "value": "contact-123",
+      "type": "string"
+    },
+    {
+      "key": "hoursId",
+      "value": "hours-123",
+      "type": "string"
+    },
+    {
+      "key": "holidayId",
+      "value": "holiday-123",
+      "type": "string"
+    },
+    {
+      "key": "identifierId",
+      "value": "identifier-123",
+      "type": "string"
+    },
+    {
+      "key": "consentId",
+      "value": "consent-123",
+      "type": "string"
+    },
+    {
+      "key": "realmName",
+      "value": "mdental-test-clinic",
+      "type": "string"
+    }
+  ]
+}

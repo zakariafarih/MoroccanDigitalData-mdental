@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# --- Determine the script’s own directory, so paths resolve correctly ---
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-KEYCLOAK_DIR="${SCRIPT_DIR}/../keycloak"
-
-# --- Input validation ---
+# Input validation
 if [ $# -ne 1 ]; then
   echo "Error: Clinic name is required."
   echo "Usage: $0 <clinic_name>"
@@ -13,14 +9,14 @@ if [ $# -ne 1 ]; then
 fi
 CLINIC_NAME="$1"
 
-# --- Configuration ---
+# Configuration
 KEYCLOAK_URL="http://localhost:9080"
 KEYCLOAK_ADMIN="admin"
 KEYCLOAK_ADMIN_PASSWORD="admin"
-REALM_TEMPLATE="${KEYCLOAK_DIR}/realm-template.json"
+REALM_TEMPLATE="realm-template.json"
 OUTPUT_JSON="/tmp/realm-${CLINIC_NAME}.json"
 
-# --- Ensure the template exists ---
+# Ensure the template exists
 if [ ! -f "$REALM_TEMPLATE" ]; then
   echo "Error: Realm template file not found: $REALM_TEMPLATE"
   exit 1
@@ -28,10 +24,10 @@ fi
 
 echo "Preparing Keycloak realm configuration for clinic: $CLINIC_NAME"
 
-# --- Populate the template ---
+# Populate the template
 sed "s/__CLINIC_NAME__/${CLINIC_NAME}/g" "$REALM_TEMPLATE" > "$OUTPUT_JSON"
 
-# --- Authenticate to Keycloak as admin ---
+# Authenticate to Keycloak as admin
 echo "Authenticating with Keycloak admin..."
 TOKEN=$(curl -s -X POST "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -47,7 +43,7 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
-# --- Create the new realm ---
+# Create the new realm
 echo "Creating realm mdental-${CLINIC_NAME}..."
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
   -X POST "${KEYCLOAK_URL}/admin/realms" \
@@ -68,6 +64,6 @@ else
   exit 1
 fi
 
-# --- Cleanup ---
+# Cleanup
 rm -f "$OUTPUT_JSON"
 echo "Done."
