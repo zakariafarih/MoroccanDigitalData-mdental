@@ -1,1 +1,1 @@
-org.mdental.security.autoconfig.MdentalSecurityAutoConfiguration
+org.mdental.security.autoconfig.MdentalJwtAutoConfiguration

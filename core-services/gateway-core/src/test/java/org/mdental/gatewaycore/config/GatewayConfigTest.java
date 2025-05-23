@@ -30,10 +30,11 @@ class GatewayConfigTest {
 
         // Verify routes are created
         StepVerifier.create(routeLocator.getRoutes())
-                .expectNextMatches(route -> route.getId().equals("clinic-core"))
-                .expectNextMatches(route -> route.getId().equals("patient-core"))
-                .expectNextMatches(route -> route.getId().equals("appointment-core"))
-                .expectNextMatches(route -> route.getId().equals("auth-core"))
+                .expectNextMatches(r -> r.getId().equals("clinic-core-dev"))
+                .expectNextMatches(r -> r.getId().equals("clinic-core-api"))
+                .expectNextMatches(r -> r.getId().equals("patient-core-api"))
+                .expectNextMatches(r -> r.getId().equals("appointment-core-api"))
+                .expectNextMatches(r -> r.getId().equals("auth-core-api"))
                 .expectComplete()
                 .verify();
     }

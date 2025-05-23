@@ -34,6 +34,12 @@ public class Outbox {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
+    @Column(name = "dead_letter", nullable = false)
+    private boolean deadLetter = false;
+
     @Version
     @Column(name = "version")
     private int version;

@@ -73,15 +73,4 @@ public class GlobalExceptionHandler {
         ApiResponse<Void> response = ApiResponse.error(error);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    private HttpStatus mapErrorCodeToHttpStatus(ErrorCode errorCode) {
-        return switch (errorCode) {
-            case VALIDATION_ERROR -> HttpStatus.BAD_REQUEST;
-            case RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case DUPLICATE_RESOURCE -> HttpStatus.CONFLICT;
-            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-            case FORBIDDEN -> HttpStatus.FORBIDDEN;
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
-    }
 }

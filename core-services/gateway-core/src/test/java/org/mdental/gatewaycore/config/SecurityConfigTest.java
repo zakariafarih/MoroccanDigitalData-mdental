@@ -1,37 +1,43 @@
 package org.mdental.gatewaycore.config;
 
 import org.junit.jupiter.api.Test;
+import org.mdental.commons.model.AuthPrincipal;
+import org.mdental.commons.model.Role;
+import org.mdental.security.filter.ReactiveAuthFilter;
+import org.mdental.security.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = {})
-@Import(SecurityConfig.class)
+@Import({MdentalSecurityConfig.class})
 @ActiveProfiles("test")
-class SecurityConfigTest {
+class MdentalSecurityConfigTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
+    @MockBean
+    private ReactiveAuthFilter reactiveAuthFilter;
+
+    @MockBean
+    private JwtTokenProvider jwtTokenProvider;
+
     @Test
-    @WithMockUser
     void publicEndpointsShouldBeAccessibleWithoutAuthentication() {
         webTestClient.get()
                 .uri("/actuator/health")
@@ -58,20 +64,26 @@ class SecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(authorities = {"SCOPE_api"})
-    void protectedEndpointsShouldBeAccessibleWithValidScope() {
-        webTestClient.get()
-                .uri("/api/clinics")
-                .exchange()
-                .expectStatus().isNotFound(); // 404 because the route doesn't exist in test context
-    }
+    void protectedEndpointsShouldBeAccessibleWithValidAuthentication() {
+        AuthPrincipal principal = new AuthPrincipal(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "test.user",
+                "test@mdental.org",
+                Set.of(Role.DOCTOR)
+        );
 
-    @Test
-    @WithMockUser(authorities = {"ROLE_USER"}) // No SCOPE_api
-    void protectedEndpointsShouldDenyAccessWithoutRequiredScope() {
-        webTestClient.get()
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_DOCTOR"))
+        );
+
+        webTestClient
+                .mutateWith(SecurityMockServerConfigurers.mockAuthentication(authentication))
+                .get()
                 .uri("/api/clinics")
                 .exchange()
-                .expectStatus().isForbidden();
+                .expectStatus().isNotFound(); // 404 because route doesn't exist in test context
     }
 }

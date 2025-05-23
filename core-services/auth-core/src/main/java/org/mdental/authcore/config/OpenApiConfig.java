@@ -10,15 +10,23 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OpenAPI (Swagger) configuration.
+ */
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Configure OpenAPI documentation.
+     *
+     * @return the OpenAPI configuration
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
                         .title("Auth Core API")
-                        .version("2.0.0")
+                        .version("1.0.0")
                         .description("Authentication and authorization APIs for MDental platform")
                         .contact(new Contact()
                                 .name("MDental Support")
