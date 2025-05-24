@@ -1,11 +1,7 @@
 package org.mdental.authcore.config;
 
 import lombok.RequiredArgsConstructor;
-import org.mdental.authcore.infrastructure.security.JwtAuthenticationFilter;
-import org.mdental.authcore.infrastructure.security.LoginRateLimitFilter;
-import org.mdental.authcore.infrastructure.security.PasswordResetRateLimitFilter;
-import org.mdental.authcore.infrastructure.security.SecurityHeadersFilter;
-import org.mdental.security.filter.AuthTokenFilter;
+import org.mdental.authcore.infrastructure.security.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +27,7 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final MdcFilter mdcFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final SecurityHeadersFilter securityHeadersFilter;
     private final LoginRateLimitFilter loginRateLimitFilter;
@@ -68,7 +65,9 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/**", "/docs/**", "/swagger-ui/**", "/.well-known/jwks.json").permitAll()
+                        .requestMatchers("/docs/**", "/swagger-ui/**", "/.well-known/jwks.json").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/internal/**").hasRole("SUPER_ADMIN")
@@ -78,6 +77,7 @@ public class SecurityConfig {
                 .addFilterBefore(loginRateLimitFilter, SecurityHeadersFilter.class)
                 .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(mdcFilter, SecurityHeadersFilter.class)
                 .build();
     }
 

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>Email Verification</title>
+    <title th:text="${subject}">Email Title</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,28 +38,20 @@
             border-radius: 3px;
             margin: 20px 0;
         }
+        .content {
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>Verify Your Email</h1>
+        <h1 th:text="${subject}">Email Title</h1>
     </div>
 
-    <p>Hello <span th:text="${name}">User</span>,</p>
-
-    <p>Thank you for registering with MDental. Please click the button below to verify your email address:</p>
-
-    <p style="text-align: center;">
-        <a class="button" th:href="${verificationLink}">Verify Email Address</a>
-    </p>
-
-    <p>This link will expire in <span th:text="${expiryHours}">24</span> hours.</p>
-
-    <p>If you did not register for an account, please ignore this email.</p>
-
-    <p>Best regards,<br />
-        The MDental Team</p>
+    <div class="content" th:utext="${body}">
+        <!-- Content will be inserted here -->
+    </div>
 
     <div class="footer">
         <p>This is an automated message. Please do not reply to this email.</p>

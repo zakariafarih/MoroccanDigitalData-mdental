@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mdental.authcore.application.service.AuthenticationService;
 import org.mdental.authcore.domain.service.AuthService;
 import org.mdental.commons.model.AuthPrincipal;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,7 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String COOKIE_ACCESS_TOKEN = "ACCESS_TOKEN";
 
-    private final AuthenticationService authenticationService;
+    private final AuthService authService;
 
     @Override
     protected void doFilterInternal(
@@ -50,7 +50,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             token.ifPresent(t -> {
                 try {
                     // Validate the token
-                    AuthPrincipal principal = authenticationService.validateToken(t);
+                    AuthPrincipal principal = authService.validateToken(t);
+
+                    // Set MDC values for logging
+                    MDC.put("tenantId", principal.tenantId().toString());
+                    MDC.put("userId", principal.id().toString());
+                    MDC.put("username", principal.username());
+                    MDC.put("requestId", request.getHeader("X-Request-ID"));
 
                     // Create authentication
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -70,6 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } finally {
             // Clear authentication after the request
             SecurityContextHolder.clearContext();
+            MDC.clear();
         }
     }
 

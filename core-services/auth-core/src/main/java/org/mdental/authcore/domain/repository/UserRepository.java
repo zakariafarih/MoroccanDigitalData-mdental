@@ -1,10 +1,13 @@
 package org.mdental.authcore.domain.repository;
 
 import org.mdental.authcore.domain.model.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,4 +61,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.tenantId = :tenantId AND u.deletedAt IS NULL")
     Optional<User> findActiveByEmailAndTenantId(String email, UUID tenantId);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.tenantId = :tenantId")
+    List<User> findByTenantIdWithRoles(@Param("tenantId") UUID tenantId);
+
+    @EntityGraph(attributePaths = {"roles"})
+    Optional<User> findByIdAndTenantId(UUID id, UUID tenantId);
 }

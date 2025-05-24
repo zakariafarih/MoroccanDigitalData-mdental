@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.authcore.domain.event.AuthEvent;
+import org.mdental.authcore.domain.model.AuditLog;
 import org.mdental.authcore.domain.model.FailedLoginAttempt;
 import org.mdental.authcore.domain.model.RefreshToken;
 import org.mdental.authcore.domain.model.User;
@@ -44,6 +45,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final OutboxService outboxService;
     private final MeterRegistry meterRegistry;
+    private final AuditLogService auditLogService;
 
     @Value("${mdental.auth.max-failed-attempts:5}")
     private int maxFailedAttempts;
@@ -80,6 +82,11 @@ public class AuthService {
         if (recentFailures >= maxFailedAttempts) {
             log.warn("Account locked due to too many failed attempts: {}", username);
             meterRegistry.counter("auth.login.lockouts", "tenant", tenantId.toString()).increment();
+            auditLogService.log(tenantId, null, AuditLog.EventType.LOGIN_LOCKOUT, Map.of(
+                    "username", username,
+                    "ipAddress", ipAddress,
+                    "failedAttempts", recentFailures
+            ));
             throw new AccountLockedException("Account is temporarily locked due to too many failed login attempts");
         }
 
@@ -92,6 +99,10 @@ public class AuthService {
             if (user.isLocked()) {
                 log.warn("Login attempt to locked account: {}", username);
                 meterRegistry.counter("auth.login.locked", "tenant", tenantId.toString()).increment();
+                auditLogService.log(tenantId, user.getId(), AuditLog.EventType.LOGIN_ATTEMPT_LOCKED_ACCOUNT, Map.of(
+                        "username", username,
+                        "ipAddress", ipAddress
+                ));
                 throw new AccountLockedException("Account is locked");
             }
 
@@ -105,6 +116,10 @@ public class AuthService {
             if (!user.isEmailVerified()) {
                 log.warn("Login attempt with unverified email: {}", username);
                 meterRegistry.counter("auth.login.unverified", "tenant", tenantId.toString()).increment();
+                auditLogService.log(tenantId, user.getId(), AuditLog.EventType.LOGIN_ATTEMPT_UNVERIFIED_EMAIL, Map.of(
+                        "username", username,
+                        "ipAddress", ipAddress
+                ));
                 throw new AuthenticationException("Email not verified");
             }
 
@@ -122,6 +137,12 @@ public class AuthService {
 
             // Record successful login
             userService.recordLogin(user.getId());
+
+            // Audit successful login
+            auditLogService.log(tenantId, user.getId(), AuditLog.EventType.LOGIN_SUCCESS, Map.of(
+                    "username", username,
+                    "ipAddress", ipAddress
+            ));
 
             // Publish login event
             outboxService.saveEvent(
@@ -185,12 +206,20 @@ public class AuthService {
             refreshTokenRepository.save(token);
             meterRegistry.counter("auth.token.replay.detected").increment();
             log.warn("Replay attack detected! Reuse of rotated token for user {}", token.getUserId());
+
+            auditLogService.log(token.getTenantId(), token.getUserId(), AuditLog.EventType.TOKEN_REPLAY_ATTACK, Map.of(
+                    "tokenId", token.getId().toString()
+            ));
+
             throw new InvalidTokenException("Refresh token has been revoked due to possible replay attack");
         }
 
         // Check if token is expired or revoked
         if (token.isRevoked() || token.getExpiresAt().isBefore(Instant.now())) {
             meterRegistry.counter("auth.token.refresh.expired").increment();
+            auditLogService.log(token.getTenantId(), token.getUserId(), AuditLog.EventType.TOKEN_EXPIRED, Map.of(
+                    "tokenId", token.getId().toString()
+            ));
             throw new InvalidTokenException("Refresh token is expired or revoked");
         }
 
@@ -221,6 +250,11 @@ public class AuthService {
             token.setTokenHash(newTokenHash);
             token.setExpiresAt(Instant.now().plus(Duration.ofMinutes(refreshTokenValidityMinutes)));
             refreshTokenRepository.save(token);
+
+            // Audit token refresh
+            auditLogService.log(token.getTenantId(), token.getUserId(), AuditLog.EventType.TOKEN_REFRESHED, Map.of(
+                    "tokenId", token.getId().toString()
+            ));
 
             // Publish token refreshed event
             outboxService.saveEvent(
@@ -267,6 +301,11 @@ public class AuthService {
             log.info("Revoked refresh token for user: {}", token.getUserId());
             meterRegistry.counter("auth.token.revoked").increment();
 
+            // Audit token revocation
+            auditLogService.log(token.getTenantId(), token.getUserId(), AuditLog.EventType.LOGOUT, Map.of(
+                    "tokenId", token.getId().toString()
+            ));
+
             // Publish token revoked event
             outboxService.saveEvent(
                     "Auth",
@@ -293,6 +332,17 @@ public class AuthService {
         int count = refreshTokenRepository.revokeAllUserTokens(userId);
         log.info("Revoked {} refresh tokens for user: {}", count, userId);
         meterRegistry.counter("auth.token.bulk_revoked").increment(count);
+
+        // Get tenant ID for this user
+        User user = userService.getUserById(userId);
+
+        // Audit mass token revocation
+        if (count > 0) {
+            auditLogService.log(user.getTenantId(), userId, AuditLog.EventType.ALL_TOKENS_REVOKED, Map.of(
+                    "count", count
+            ));
+        }
+
         return count;
     }
 
@@ -357,6 +407,17 @@ public class AuthService {
                 .build();
 
         failedLoginRepository.save(attempt);
+
+        // Audit failed login
+        // Find user ID if exists
+        UUID userId = userService.findByUsernameAndTenantId(username, tenantId)
+                .map(User::getId)
+                .orElse(null);
+
+        auditLogService.log(tenantId, userId, AuditLog.EventType.LOGIN_FAILURE, Map.of(
+                "username", username,
+                "ipAddress", ipAddress
+        ));
 
         // Track metrics
         meterRegistry.counter("auth.login.failed", "tenant", tenantId.toString()).increment();
