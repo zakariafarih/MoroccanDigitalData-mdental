@@ -2,40 +2,34 @@ package org.mdental.authcore.application.service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.authcore.domain.event.AuthEvent;
 import org.mdental.authcore.domain.model.FailedLoginAttempt;
-import org.mdental.authcore.domain.model.RefreshToken;
 import org.mdental.authcore.domain.model.User;
 import org.mdental.authcore.domain.repository.FailedLoginAttemptRepository;
-import org.mdental.authcore.domain.repository.RefreshTokenRepository;
+import org.mdental.authcore.domain.service.AuthService;
 import org.mdental.authcore.domain.service.OutboxService;
 import org.mdental.authcore.domain.service.UserService;
 import org.mdental.authcore.exception.AccountLockedException;
 import org.mdental.authcore.exception.AuthenticationException;
-import org.mdental.authcore.exception.InvalidTokenException;
-import org.mdental.authcore.infrastructure.security.TokenService;
 import org.mdental.commons.model.AuthPrincipal;
-import org.mdental.security.jwt.JwtException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Orchestrates authentication operations between domain layer and infrastructure.
+ * Service for authentication operations.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthenticationService {
     private final UserService userService;
-    private final TokenService tokenService;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthService authService;
     private final FailedLoginAttemptRepository failedLoginRepository;
     private final OutboxService outboxService;
 
@@ -44,9 +38,6 @@ public class AuthenticationService {
 
     @Value("${mdental.auth.lockout-duration:15}")
     private int lockoutDurationMinutes;
-
-    @Value("${mdental.auth.rotate-refresh-tokens:true}")
-    private boolean rotateRefreshTokens;
 
     /**
      * Authenticate a user and generate tokens.
@@ -93,24 +84,8 @@ public class AuthenticationService {
                 throw new AuthenticationException("Email not verified");
             }
 
-            // Generate tokens
-            Map<String, Object> tokens = tokenService.generateAuthTokens(user);
-
-            // Record successful login
-            userService.recordLogin(user.getId());
-
-            // Publish login event
-            outboxService.saveEvent(
-                    "User",
-                    user.getId(),
-                    AuthEvent.LOGIN_SUCCESS.name(),
-                    null,
-                    Map.of(
-                            "userId", user.getId(),
-                            "tenantId", user.getTenantId(),
-                            "timestamp", Instant.now()
-                    )
-            );
+            // Use AuthService to authenticate and generate tokens
+            Map<String, Object> tokens = authService.authenticate(tenantId, username, password, ipAddress);
 
             return tokens;
 
@@ -129,15 +104,7 @@ public class AuthenticationService {
     @Transactional
     public Map<String, Object> refreshToken(String refreshTokenValue) {
         log.debug("Refreshing token");
-
-        // Find refresh token
-        RefreshToken token = tokenService.findAndValidateRefreshToken(refreshTokenValue);
-
-        // Find user
-        User user = userService.getUserById(token.getUserId());
-
-        // Generate new tokens
-        return tokenService.refreshTokens(token, user, rotateRefreshTokens);
+        return authService.refreshToken(refreshTokenValue);
     }
 
     /**
@@ -147,7 +114,7 @@ public class AuthenticationService {
      */
     @Transactional
     public void revokeToken(String refreshTokenValue) {
-        tokenService.revokeRefreshToken(refreshTokenValue);
+        authService.revokeToken(refreshTokenValue);
     }
 
     /**
@@ -158,7 +125,7 @@ public class AuthenticationService {
      */
     @Transactional
     public int revokeAllUserTokens(UUID userId) {
-        return tokenService.revokeAllUserTokens(userId);
+        return authService.revokeAllUserTokens(userId);
     }
 
     /**
@@ -168,7 +135,7 @@ public class AuthenticationService {
      * @return the authentication principal
      */
     public AuthPrincipal validateToken(String token) {
-        return tokenService.validateToken(token);
+        return authService.validateToken(token);
     }
 
     /**
@@ -178,7 +145,7 @@ public class AuthenticationService {
      * @return introspection response
      */
     public Map<String, Object> introspectToken(String token) {
-        return tokenService.introspectToken(token);
+        return authService.introspectToken(token);
     }
 
     /**
@@ -188,7 +155,7 @@ public class AuthenticationService {
      */
     @Transactional
     public int cleanupExpiredTokens() {
-        return tokenService.cleanupExpiredTokens();
+        return authService.cleanupExpiredTokens();
     }
 
     /**

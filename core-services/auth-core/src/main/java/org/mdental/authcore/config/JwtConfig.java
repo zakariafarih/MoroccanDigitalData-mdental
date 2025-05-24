@@ -1,12 +1,19 @@
 package org.mdental.authcore.config;
 
+import java.time.Clock;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.mdental.authcore.infrastructure.security.KeyGenerator;
+import org.mdental.authcore.infrastructure.security.RsaJwtTokenProvider;
+import org.mdental.security.autoconfig.JwtProps;
 import org.mdental.security.jwt.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * JWT configuration.
@@ -30,9 +37,6 @@ public class JwtConfig {
 
     /**
      * List of allowed issuer patterns for JWT validation.
-     *
-     * @param patterns the patterns from configuration
-     * @return the list of allowed issuer patterns
      */
     @Bean(name = "allowedIssuerPatterns")
     public List<String> allowedIssuerPatterns(
@@ -42,19 +46,41 @@ public class JwtConfig {
     }
 
     /**
-     * Custom JwtTokenProvider that uses RSA keys.
-     *
-     * @return the token provider
+     * The system clock -- used by JwtTokenProvider for timestamps.
      */
     @Bean
-    public JwtTokenProvider jwtTokenProvider() {
+    public Clock jwtClock() {
+        return Clock.systemUTC();
+    }
+
+    /**
+     * The JwtProps configured from application properties.
+     */
+    @Bean
+    @Primary
+    public JwtProps jwtProps() {
+        return new JwtProps(); // will be populated by Spring via @ConfigurationProperties
+    }
+
+    /**
+     * Custom JwtTokenProvider that uses RSA keys.
+     */
+    @Bean
+    public JwtTokenProvider jwtTokenProvider(
+            @Qualifier("jwtProps") JwtProps jwtProps,
+            Clock jwtClock,
+            @Autowired(required = false) com.nimbusds.jose.jwk.JWKSet jwkSet
+    ) {
         return new RsaJwtTokenProvider(
+                jwtProps,
+                jwtClock,
                 issuer,
                 keyGenerator.getPrivateKey(),
                 keyGenerator.getPublicKey(),
                 accessTtl,
                 refreshTtl,
-                kidValue
+                kidValue,
+                jwkSet
         );
     }
 }

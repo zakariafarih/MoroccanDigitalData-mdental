@@ -8,12 +8,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mdental.authcore.domain.model.Tenant;
+import org.mdental.authcore.domain.model.User;
 import org.mdental.authcore.domain.service.AuthService;
 import org.mdental.authcore.domain.service.TenantService;
 import org.mdental.authcore.domain.service.UserService;
 import org.mdental.authcore.domain.service.VerificationService;
-import org.mdental.authcore.persistence.entity.Tenant;
-import org.mdental.authcore.persistence.entity.User;
+
 import org.mdental.authcore.web.dto.*;
 import org.mdental.authcore.web.mapper.UserMapper;
 import org.mdental.commons.model.ApiResponse;
@@ -340,30 +341,37 @@ public class TenantAuthController {
      * @param accessToken the access token
      * @param refreshToken the refresh token
      */
-    private void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        // Set access token cookie (short-lived)
-        ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", accessToken)
+    private void setTokenCookies(HttpServletResponse response,
+                                 String accessToken,
+                                 String refreshToken) {
+        // 1) Prepare builders with secure attributes
+        ResponseCookie.ResponseCookieBuilder accessBuilder = ResponseCookie
+                .from("__Secure-ACCESS_TOKEN", accessToken)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite(cookieSameSite)
-                .maxAge(3600) // 1 hour
-                .build();
+                .sameSite("Strict")
+                .maxAge(3600); // Match the JWT expiration time
 
-        // Set refresh token cookie (long-lived)
-        ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
+        ResponseCookie.ResponseCookieBuilder refreshBuilder = ResponseCookie
+                .from("__Secure-REFRESH_TOKEN", refreshToken)
                 .httpOnly(true)
                 .secure(true)
-                .path("/auth")
-                .sameSite(cookieSameSite)
-                .maxAge(86400 * 30) // 30 days
-                .build();
+                .path("/auth") // Scope to auth paths only
+                .sameSite("Strict")
+                .maxAge(86400 * 30); // 30 days - match refresh token validity
 
+        // 2) Conditionally apply domain
         if (!cookieDomain.isBlank()) {
-            accessCookie = accessCookie.domain(cookieDomain);
-            refreshCookie = refreshCookie.domain(cookieDomain);
+            accessBuilder = accessBuilder.domain(cookieDomain);
+            refreshBuilder = refreshBuilder.domain(cookieDomain);
         }
 
+        // 3) Build cookies
+        ResponseCookie accessCookie = accessBuilder.build();
+        ResponseCookie refreshCookie = refreshBuilder.build();
+
+        // 4) Add headers
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
     }
@@ -374,25 +382,32 @@ public class TenantAuthController {
      * @param response the HTTP response
      */
     private void clearTokenCookies(HttpServletResponse response) {
-        // Create expired cookies to clear them
-        Cookie accessCookie = new Cookie("ACCESS_TOKEN", "");
-        accessCookie.setMaxAge(0);
-        accessCookie.setPath("/");
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(true);
+        // Use the same secure attributes when clearing cookies
+        ResponseCookie.ResponseCookieBuilder accessBuilder = ResponseCookie
+                .from("__Secure-ACCESS_TOKEN", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(0);  // Expire immediately
 
-        Cookie refreshCookie = new Cookie("REFRESH_TOKEN", "");
-        refreshCookie.setMaxAge(0);
-        refreshCookie.setPath("/auth");
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
+        ResponseCookie.ResponseCookieBuilder refreshBuilder = ResponseCookie
+                .from("__Secure-REFRESH_TOKEN", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/auth")
+                .sameSite("Strict")
+                .maxAge(0);  // Expire immediately
 
         if (!cookieDomain.isBlank()) {
-            accessCookie.setDomain(cookieDomain);
-            refreshCookie.setDomain(cookieDomain);
+            accessBuilder = accessBuilder.domain(cookieDomain);
+            refreshBuilder = refreshBuilder.domain(cookieDomain);
         }
 
-        response.addCookie(accessCookie);
-        response.addCookie(refreshCookie);
+        ResponseCookie accessCookie = accessBuilder.build();
+        ResponseCookie refreshCookie = refreshBuilder.build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
     }
 }

@@ -1,9 +1,13 @@
-package org.mdental.authcore.config;
+package org.mdental.authcore.infrastructure.security;
 
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,8 +18,10 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.commons.model.AuthPrincipal;
 import org.mdental.commons.model.Role;
+import org.mdental.security.autoconfig.JwtProps;
 import org.mdental.security.jwt.JwtClaim;
 import org.mdental.security.jwt.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * JWT token provider that uses RSA keys for signing.
@@ -28,31 +34,26 @@ public class RsaJwtTokenProvider extends JwtTokenProvider {
     private final long accessTtlSeconds;
     private final long refreshTtlSeconds;
     private final String keyId;
+    private final JWKSet jwkSet;
 
-    /**
-     * Constructor.
-     *
-     * @param issuer the issuer
-     * @param privateKey the private key
-     * @param publicKey the public key
-     * @param accessTtlSeconds the access token TTL in seconds
-     * @param refreshTtlSeconds the refresh token TTL in seconds
-     * @param keyId the key ID
-     */
     public RsaJwtTokenProvider(
+            JwtProps jwtProps,
+            Clock clock,
             String issuer,
             RSAPrivateKey privateKey,
             RSAPublicKey publicKey,
             long accessTtlSeconds,
             long refreshTtlSeconds,
-            String keyId) {
-        super();
+            String keyId,
+            @Autowired(required = false) JWKSet jwkSet) {
+        super(jwtProps, clock);
         this.issuer = issuer;
         this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.accessTtlSeconds = accessTtlSeconds;
         this.refreshTtlSeconds = refreshTtlSeconds;
         this.keyId = keyId;
+        this.jwkSet = jwkSet;
     }
 
     /**
@@ -67,20 +68,18 @@ public class RsaJwtTokenProvider extends JwtTokenProvider {
      */
     @Override
     public String createToken(UUID id, String username, String email, UUID tenantId, Set<Role> roles) {
-        Instant now = Instant.now();
+        Instant now    = Instant.now();
         Instant expiry = now.plusSeconds(accessTtlSeconds);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put(JwtClaim.SUBJECT.toString(), id.toString());
-        claims.put(JwtClaim.USERNAME.toString(), username);
-        claims.put(JwtClaim.EMAIL.toString(), email);
+        claims.put(JwtClaim.SUBJECT.toString(),   id.toString());
+        claims.put(JwtClaim.USERNAME.toString(),  username);
+        claims.put(JwtClaim.EMAIL.toString(),     email);
         claims.put(JwtClaim.TENANT_ID.toString(), tenantId.toString());
-        claims.put(JwtClaim.ROLES.toString(), roles.stream()
-                .map(Role::name)
-                .collect(Collectors.toList()));
+        claims.put(JwtClaim.ROLES.toString(),
+                roles.stream().map(Role::name).collect(Collectors.toList()));
 
-        Map<String, Object> headers = new HashMap<>();
-        headers.put("kid", keyId);
+        Map<String, Object> headers = Map.of("kid", keyId);
 
         return Jwts.builder()
                 .setHeader(headers)
@@ -101,16 +100,15 @@ public class RsaJwtTokenProvider extends JwtTokenProvider {
      */
     @Override
     public String createRefreshToken(UUID id, UUID tenantId) {
-        Instant now = Instant.now();
+        Instant now    = Instant.now();
         Instant expiry = now.plusSeconds(refreshTtlSeconds);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put(JwtClaim.SUBJECT.toString(), id.toString());
+        claims.put(JwtClaim.SUBJECT.toString(),   id.toString());
         claims.put(JwtClaim.TENANT_ID.toString(), tenantId.toString());
         claims.put(JwtClaim.TOKEN_TYPE.toString(), "refresh");
 
-        Map<String, Object> headers = new HashMap<>();
-        headers.put("kid", keyId);
+        Map<String, Object> headers = Map.of("kid", keyId);
 
         return Jwts.builder()
                 .setHeader(headers)
@@ -130,9 +128,8 @@ public class RsaJwtTokenProvider extends JwtTokenProvider {
      */
     @Override
     public AuthPrincipal parseToken(String token) {
-        // Implement token parsing logic
-        // This would extract claims from the JWT and construct an AuthPrincipal
-        return null;
+        // Delegate to the parent, which will verify signature with the publicKey
+        return super.parseToken(token);
     }
 
     /**
@@ -143,8 +140,35 @@ public class RsaJwtTokenProvider extends JwtTokenProvider {
      */
     @Override
     public boolean validateToken(String token) {
-        // Implement token validation logic
-        // This would verify the token signature and expiration
-        return true;
+        try {
+            // Extract kid from token header
+            JwsHeader<?> header = Jwts.parserBuilder()
+                    .setSigningKey(publicKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getHeader();
+
+            String tokenKid = header.getKeyId();
+
+            // If jwkSet is available and kid doesn't match our current key,
+            // try to get the key from the JWKSet
+            if (jwkSet != null && tokenKid != null && !keyId.equals(tokenKid)) {
+                RSAKey key = (RSAKey) jwkSet.getKeyByKeyId(tokenKid);
+                if (key != null) {
+                    RSAPublicKey alternatePublicKey = key.toRSAPublicKey();
+                    Jwts.parserBuilder()
+                            .setSigningKey(alternatePublicKey)
+                            .build()
+                            .parseClaimsJws(token);
+                    return true;
+                }
+            }
+
+            // Fall back to default validation with current key
+            return super.validateToken(token);
+        } catch (Exception e) {
+            log.debug("JWT validation failed: {}", e.getMessage());
+            return false;
+        }
     }
 }

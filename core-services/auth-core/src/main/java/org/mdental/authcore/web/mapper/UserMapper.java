@@ -1,7 +1,7 @@
 package org.mdental.authcore.web.mapper;
 
 import org.mapstruct.Mapper;
-import org.mdental.authcore.persistence.entity.User;
+import org.mdental.authcore.domain.model.User;
 import org.mdental.authcore.web.dto.UserInfoResponse;
 
 /**

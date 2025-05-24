@@ -2,6 +2,9 @@ package org.mdental.authcore.config;
 
 import lombok.RequiredArgsConstructor;
 import org.mdental.authcore.infrastructure.security.JwtAuthenticationFilter;
+import org.mdental.authcore.infrastructure.security.LoginRateLimitFilter;
+import org.mdental.authcore.infrastructure.security.PasswordResetRateLimitFilter;
+import org.mdental.authcore.infrastructure.security.SecurityHeadersFilter;
 import org.mdental.security.filter.AuthTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.util.matcher.RegexRequestMatcher;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,8 +31,10 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final AuthTokenFilter authTokenFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final SecurityHeadersFilter securityHeadersFilter;
+    private final LoginRateLimitFilter loginRateLimitFilter;
+    private final PasswordResetRateLimitFilter passwordResetRateLimitFilter;
 
     /**
      * Configure security filter chain.
@@ -40,13 +45,23 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain security(HttpSecurity http) throws Exception {
+        // Create CSRF token repository that uses cookies and supports Angular, React, etc.
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        // Use __Secure- prefix for CSRF cookie in HTTPS environments
+        csrfTokenRepository.setCookieName("__Secure-XSRF-TOKEN");
+        csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
+
+        // This helps with SPA frameworks that use different token extraction methods
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+
         return http
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(requestHandler)
                         .ignoringRequestMatchers(
-                                RegexRequestMatcher.regexMatcher("/auth/.+/(login|refresh|register|forgot|reset|logout)$"),
-                                RegexRequestMatcher.regexMatcher("/oauth/(token|introspect)$"),
-                                RegexRequestMatcher.regexMatcher("/internal/.+$")
+                                "/internal/**",
+                                "/.well-known/jwks.json"
                         )
                 )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -55,12 +70,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**", "/docs/**", "/swagger-ui/**", "/.well-known/jwks.json").permitAll()
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/oauth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/internal/**").hasRole("SUPER_ADMIN")
                         .anyRequest().authenticated())
+                // Password reset filter should come before login filter
+                .addFilterBefore(passwordResetRateLimitFilter, LoginRateLimitFilter.class)
+                .addFilterBefore(loginRateLimitFilter, SecurityHeadersFilter.class)
+                .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

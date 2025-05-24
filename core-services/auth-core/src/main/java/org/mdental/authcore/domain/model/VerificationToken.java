@@ -28,6 +28,7 @@ public class VerificationToken extends BaseEntity {
      * User ID that this token belongs to.
      */
     @Column(name = "user_id", nullable = false)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_verification_token_user"))
     private UUID userId;
 
     /**

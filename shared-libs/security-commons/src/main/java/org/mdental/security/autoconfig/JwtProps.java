@@ -41,6 +41,12 @@ public class JwtProps {
     private String issuer = "mdental.org";
 
     /**
+     * The key identifier (kid) to put in JWT headers.
+     */
+    @NotBlank(message = "Key ID is required")
+    private String keyId;
+
+    /**
      * Access token time-to-live in seconds
      */
     @Positive(message = "Access token TTL must be positive")

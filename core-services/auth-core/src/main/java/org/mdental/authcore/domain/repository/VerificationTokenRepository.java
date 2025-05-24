@@ -1,6 +1,6 @@
 package org.mdental.authcore.domain.repository;
 
-import org.mdental.authcore.persistence.entity.VerificationToken;
+import org.mdental.authcore.domain.model.VerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

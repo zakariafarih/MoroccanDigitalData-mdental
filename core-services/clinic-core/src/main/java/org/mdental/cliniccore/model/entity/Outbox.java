@@ -34,6 +34,18 @@ public class Outbox {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    /**
+     * How many times we’ve retried delivering this event.
+     */
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
+    /**
+     * If true, this event has been moved to the dead-letter queue.
+     */
+    @Column(name = "dead_letter", nullable = false)
+    private boolean deadLetter = false;
+
     @Version
     @Column(name = "version")
     private int version;

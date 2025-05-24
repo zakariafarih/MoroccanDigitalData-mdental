@@ -22,13 +22,15 @@ public class RefreshToken extends BaseEntity {
     /**
      * User ID that this token belongs to.
      */
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_refresh_token_user"))
     private UUID userId;
 
     /**
      * Tenant ID that this token belongs to.
      */
     @Column(name = "tenant_id", nullable = false)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_refresh_token_tenant"))
     private UUID tenantId;
 
     /**
@@ -46,6 +48,7 @@ public class RefreshToken extends BaseEntity {
     /**
      * Flag indicating if this token has been revoked.
      */
+    @Column(nullable = false)
     @Builder.Default
     private boolean revoked = false;
 

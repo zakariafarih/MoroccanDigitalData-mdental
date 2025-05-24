@@ -4,32 +4,34 @@ import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.authcore.domain.event.AuthEvent;
-import org.mdental.authcore.persistence.entity.FailedLoginAttempt;
-import org.mdental.authcore.persistence.entity.RefreshToken;
-import org.mdental.authcore.persistence.entity.User;
-import org.mdental.authcore.persistence.repository.FailedLoginAttemptRepository;
-import org.mdental.authcore.persistence.repository.RefreshTokenRepository;
+import org.mdental.authcore.domain.model.FailedLoginAttempt;
+import org.mdental.authcore.domain.model.RefreshToken;
+import org.mdental.authcore.domain.model.User;
+import org.mdental.authcore.domain.repository.FailedLoginAttemptRepository;
+import org.mdental.authcore.domain.repository.RefreshTokenRepository;
 import org.mdental.authcore.exception.AccountLockedException;
 import org.mdental.authcore.exception.AuthenticationException;
 import org.mdental.authcore.exception.InvalidTokenException;
 import org.mdental.authcore.util.TokenHashUtil;
 import org.mdental.commons.model.AuthPrincipal;
+import org.mdental.commons.model.Role;
 import org.mdental.security.jwt.JwtException;
 import org.mdental.security.jwt.JwtTokenProvider;
 import org.mdental.security.password.PasswordService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * Service for authentication operations.
+ * Unified service for authentication and token operations.
  */
 @Service
 @RequiredArgsConstructor
@@ -93,7 +95,7 @@ public class AuthService {
                 throw new AccountLockedException("Account is locked");
             }
 
-            // Verify password - use constant-time comparison
+            // Verify password
             if (!passwordService.matches(password.toCharArray(), user.getPasswordHash())) {
                 recordFailedLogin(username, tenantId, ipAddress);
                 throw new BadCredentialsException("Invalid credentials");
@@ -413,5 +415,18 @@ public class AuthService {
         log.info("Cleaned up {} expired refresh tokens", count);
         meterRegistry.counter("auth.token.cleanup").increment(count);
         return count;
+    }
+
+    /**
+     * Convert roles to Spring Security authorities.
+     *
+     * @param roles the roles to convert
+     * @return the corresponding authorities
+     */
+    public static Collection<GrantedAuthority> getAuthorities(Collection<Role> roles) {
+        return roles.stream()
+                .map(role -> (GrantedAuthority)
+                        new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .collect(Collectors.toList());
     }
 }

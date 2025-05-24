@@ -9,6 +9,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mdental.authcore.application.service.AuthenticationService;
+import org.mdental.authcore.domain.service.AuthService;
 import org.mdental.commons.model.AuthPrincipal;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
@@ -27,7 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String COOKIE_ACCESS_TOKEN = "ACCESS_TOKEN";
 
-    private final TokenService tokenService;
     private final AuthenticationService authenticationService;
 
     @Override
@@ -56,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             principal,
                             null,
-                            TokenService.getAuthorities(principal.roles())
+                            AuthService.getAuthorities(principal.roles())
                     );
 
                     // Set authentication in context

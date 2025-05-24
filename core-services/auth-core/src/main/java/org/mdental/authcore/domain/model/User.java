@@ -31,19 +31,20 @@ public class User extends BaseEntity {
      * Tenant ID that this user belongs to.
      * Used for multi-tenancy isolation.
      */
-    @Column(name = "tenant_id", nullable = false)
+   @Column(name = "tenant_id", nullable = false)
+   @JoinColumn(foreignKey = @ForeignKey(name = "fk_user_tenant"))
     private java.util.UUID tenantId;
 
     /**
      * Username, unique within tenant scope.
      */
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     /**
      * Email address, unique within tenant scope.
      */
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     /**
@@ -67,12 +68,13 @@ public class User extends BaseEntity {
     /**
      * Flag indicating if email has been verified.
      */
-    @Column(name = "email_verified")
+    @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
     /**
      * Flag indicating if account is locked.
      */
+    @Column(nullable = false)
     private boolean locked;
 
     /**
@@ -85,7 +87,7 @@ public class User extends BaseEntity {
      * Roles associated with this user.
      */
     @ElementCollection(fetch = EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_user_roles_user")))
     @Column(name = "role")
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;

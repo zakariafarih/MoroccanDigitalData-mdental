@@ -1,6 +1,6 @@
 package org.mdental.authcore.domain.repository;
 
-import org.mdental.authcore.persistence.entity.FailedLoginAttempt;
+import org.mdental.authcore.domain.model.FailedLoginAttempt;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

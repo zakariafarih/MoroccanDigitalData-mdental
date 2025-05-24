@@ -8,6 +8,7 @@ import org.mdental.commons.exception.BaseException;
 import org.mdental.commons.model.ApiError;
 import org.mdental.commons.model.ApiResponse;
 import org.mdental.commons.model.ErrorCode;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -127,26 +128,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle access denied exceptions.
-     *
-     * @param ex the exception
-     * @param request the HTTP request
-     * @return the error response
-     */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
-            AccessDeniedException ex, HttpServletRequest request) {
-        log.warn("Access denied exception on [{} {}]: {}",
-                request.getMethod(), request.getRequestURI(), ex.getMessage());
-
-        meterRegistry.counter("auth.errors", "type", "access_denied").increment();
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ErrorCode.ACCESS_DENIED, "Access denied"));
-    }
-
-    /**
      * Handle bad credentials exceptions.
      *
      * @param ex the exception
@@ -182,5 +163,67 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(ErrorCode.GENERAL_ERROR, "An unexpected error occurred"));
+    }
+
+    /**
+     * Handle access denied exceptions.
+     *
+     * @param ex the exception
+     * @param request the HTTP request
+     * @return the error response
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+   public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
+           AccessDeniedException ex, HttpServletRequest request) {
+               log.warn("Access denied exception on [{} {}]: {}",
+                       request.getMethod(), request.getRequestURI(), ex.getMessage());
+               meterRegistry.counter("auth.errors", "type", "access_denied").increment();
+               return ResponseEntity
+                       .status(HttpStatus.FORBIDDEN)
+                       .body(ApiResponse.error(ErrorCode.ACCESS_DENIED, "Access denied"));
+    }
+
+    /**
+     * Handle invalid token exceptions.
+     *
+     * @param ex the exception
+     * @param request the HTTP request
+     * @return the error response
+     */
+    @ExceptionHandler(InvalidTokenException.class)
+   public ResponseEntity<ApiResponse<Void>> handleInvalidToken(
+           InvalidTokenException ex, HttpServletRequest request) {
+        log.warn("Invalid token exception on [{} {}]: {}",
+                request.getMethod(), request.getRequestURI(), ex.getMessage());
+        meterRegistry.counter("auth.errors", "type", "invalid_token").increment();
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ErrorCode.INVALID_TOKEN, ex.getMessage()));
+    }
+
+    /**
+     * Handle data integrity violations.
+     *
+     * @param ex the exception
+     * @param request the HTTP request
+     * @return the error response
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+   public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+               log.warn("Data integrity violation on [{} {}]: {}",
+                       request.getMethod(), request.getRequestURI(), ex.getMessage());
+               meterRegistry.counter("auth.errors", "type", "data_integrity").increment();
+
+               // Extract constraint name if available
+        String message = "Data integrity violation";
+        if (ex.getMessage() != null && ex.getMessage().contains("constraint")) {
+            message = "Resource already exists or violates constraints";
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ErrorCode.DUPLICATE_RESOURCE, message));
     }
 }

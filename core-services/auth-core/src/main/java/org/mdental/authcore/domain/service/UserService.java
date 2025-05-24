@@ -1,38 +1,13 @@
 package org.mdental.authcore.domain.service;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.mdental.authcore.domain.event.UserEvent;
-import org.mdental.authcore.persistence.entity.User;
-import org.mdental.authcore.persistence.repository.UserRepository;
-import org.mdental.authcore.exception.AuthenticationException;
-import org.mdental.authcore.exception.DuplicateResourceException;
-import org.mdental.authcore.exception.NotFoundException;
-import org.mdental.authcore.exception.ValidationException;
-import org.mdental.authcore.util.PasswordPolicy;
-import org.mdental.security.password.PasswordService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.annotation.Validated;
-
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.mdental.authcore.domain.model.User;
 
 /**
  * Service for user management operations.
  */
-@Service
-@Validated
-@RequiredArgsConstructor
-@Slf4j
-public class UserService {
-    private final UserRepository userRepository;
-    private final PasswordService passwordService;
-    private final OutboxService outboxService;
-    private final PasswordPolicy passwordPolicy;
+public interface UserService {
 
     /**
      * Create a new user.
@@ -41,33 +16,7 @@ public class UserService {
      * @param rawPassword the raw password
      * @return the created user
      */
-    @Transactional
-    public User createUser(@Valid @NotNull User user, @NotNull String rawPassword) {
-        log.info("Creating new user: {} for tenant: {}", user.getUsername(), user.getTenantId());
-
-        // Validate user data
-        validateNewUser(user);
-
-        // Validate password
-        passwordPolicy.validate(rawPassword);
-
-        // Hash password
-        user.setPasswordHash(passwordService.hash(rawPassword.toCharArray()));
-
-        // Save user
-        User savedUser = userRepository.save(user);
-
-        // Publish user created event
-        outboxService.saveEvent(
-                "User",
-                savedUser.getId(),
-                UserEvent.CREATED.name(),
-                null,
-                savedUser
-        );
-
-        return savedUser;
-    }
+    User createUser(User user, String rawPassword);
 
     /**
      * Find a user by ID.
@@ -75,11 +24,7 @@ public class UserService {
      * @param userId the user ID
      * @return the user
      */
-    @Transactional(readOnly = true)
-    public User getUserById(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
-    }
+    User getUserById(UUID userId);
 
     /**
      * Find a user by username and tenant ID.
@@ -88,10 +33,7 @@ public class UserService {
      * @param tenantId the tenant ID
      * @return the user if found
      */
-    @Transactional(readOnly = true)
-    public Optional<User> findByUsernameAndTenantId(String username, UUID tenantId) {
-        return userRepository.findByUsernameAndTenantId(username, tenantId);
-    }
+    Optional<User> findByUsernameAndTenantId(String username, UUID tenantId);
 
     /**
      * Find a user by email and tenant ID.
@@ -100,10 +42,7 @@ public class UserService {
      * @param tenantId the tenant ID
      * @return the user if found
      */
-    @Transactional(readOnly = true)
-    public Optional<User> findByEmailAndTenantId(String email, UUID tenantId) {
-        return userRepository.findByEmailAndTenantId(email, tenantId);
-    }
+    Optional<User> findByEmailAndTenantId(String email, UUID tenantId);
 
     /**
      * Update user password.
@@ -113,34 +52,7 @@ public class UserService {
      * @param newPassword the new password
      * @return the updated user
      */
-    @Transactional
-    public User updatePassword(UUID userId, String currentPassword, String newPassword) {
-        User user = getUserById(userId);
-
-        // Verify current password
-        if (!passwordService.matches(currentPassword.toCharArray(), user.getPasswordHash())) {
-            throw new AuthenticationException("Current password is incorrect");
-        }
-
-        // Validate new password
-        passwordPolicy.validate(newPassword);
-
-        // Hash new password
-        user.setPasswordHash(passwordService.hash(newPassword.toCharArray()));
-
-        User updatedUser = userRepository.save(user);
-
-        // Publish password changed event
-        outboxService.saveEvent(
-                "User",
-                user.getId(),
-                UserEvent.PASSWORD_CHANGED.name(),
-                null,
-                user.getId()
-        );
-
-        return updatedUser;
-    }
+    User updatePassword(UUID userId, String currentPassword, String newPassword);
 
     /**
      * Reset user password (admin function or password reset).
@@ -149,29 +61,7 @@ public class UserService {
      * @param newPassword the new password
      * @return the updated user
      */
-    @Transactional
-    public User resetPassword(UUID userId, String newPassword) {
-        User user = getUserById(userId);
-
-        // Validate new password
-        passwordPolicy.validate(newPassword);
-
-        // Hash new password
-        user.setPasswordHash(passwordService.hash(newPassword.toCharArray()));
-
-        User updatedUser = userRepository.save(user);
-
-        // Publish password reset event
-        outboxService.saveEvent(
-                "User",
-                user.getId(),
-                UserEvent.PASSWORD_RESET.name(),
-                null,
-                user.getId()
-        );
-
-        return updatedUser;
-    }
+    User resetPassword(UUID userId, String newPassword);
 
     /**
      * Lock or unlock a user account.
@@ -180,27 +70,7 @@ public class UserService {
      * @param locked the locked status
      * @return the updated user
      */
-    @Transactional
-    public User setUserLocked(UUID userId, boolean locked) {
-        User user = getUserById(userId);
-
-        if (user.isLocked() != locked) {
-            user.setLocked(locked);
-            user = userRepository.save(user);
-
-            // Publish user locked/unlocked event
-            UserEvent event = locked ? UserEvent.LOCKED : UserEvent.UNLOCKED;
-            outboxService.saveEvent(
-                    "User",
-                    user.getId(),
-                    event.name(),
-                    null,
-                    user.getId()
-            );
-        }
-
-        return user;
-    }
+    User setUserLocked(UUID userId, boolean locked);
 
     /**
      * Update user profile.
@@ -211,60 +81,7 @@ public class UserService {
      * @param email the new email (or null to keep current)
      * @return the updated user
      */
-    @Transactional
-    public User updateProfile(UUID userId, String firstName, String lastName, String email) {
-        User user = getUserById(userId);
-        boolean changed = false;
-        boolean emailChanged = false;
-
-        if (firstName != null && !firstName.equals(user.getFirstName())) {
-            user.setFirstName(firstName);
-            changed = true;
-        }
-
-        if (lastName != null && !lastName.equals(user.getLastName())) {
-            user.setLastName(lastName);
-            changed = true;
-        }
-
-        if (email != null && !email.equals(user.getEmail())) {
-            // Check if email is already in use
-            if (userRepository.existsByEmailAndTenantId(email, user.getTenantId())) {
-                throw new DuplicateResourceException("Email already in use");
-            }
-
-            user.setEmail(email);
-            user.setEmailVerified(false); // Require verification of new email
-            changed = true;
-            emailChanged = true;
-        }
-
-        if (changed) {
-            user = userRepository.save(user);
-
-            // Publish profile updated event
-            outboxService.saveEvent(
-                    "User",
-                    user.getId(),
-                    UserEvent.PROFILE_UPDATED.name(),
-                    null,
-                    user
-            );
-
-            // Publish email changed event if needed
-            if (emailChanged) {
-                outboxService.saveEvent(
-                        "User",
-                        user.getId(),
-                        UserEvent.EMAIL_CHANGED.name(),
-                        null,
-                        user
-                );
-            }
-        }
-
-        return user;
-    }
+    User updateProfile(UUID userId, String firstName, String lastName, String email);
 
     /**
      * Mark user email as verified.
@@ -272,64 +89,21 @@ public class UserService {
      * @param userId the user ID
      * @return the updated user
      */
-    @Transactional
-    public User verifyEmail(UUID userId) {
-        User user = getUserById(userId);
-
-        if (!user.isEmailVerified()) {
-            user.setEmailVerified(true);
-            user = userRepository.save(user);
-
-            // Publish email verified event
-            outboxService.saveEvent(
-                    "User",
-                    user.getId(),
-                    UserEvent.EMAIL_VERIFIED.name(),
-                    null,
-                    user.getId()
-            );
-        }
-
-        return user;
-    }
+    User verifyEmail(UUID userId);
 
     /**
      * Record successful login for a user.
      *
      * @param userId the user ID
      */
-    @Transactional
-    public void recordLogin(UUID userId) {
-        User user = getUserById(userId);
-        user.setLastLoginAt(Instant.now());
-        userRepository.save(user);
-    }
+    void recordLogin(UUID userId);
 
     /**
-     * Validate a new user.
+     * Verify a user's password.
      *
-     * @param user the user to validate
-     * @throws ValidationException if the user is invalid
+     * @param user the user
+     * @param password the password to verify
+     * @return true if the password is valid
      */
-    private void validateNewUser(User user) {
-        // Check username
-        if (user.getUsername() == null || user.getUsername().isBlank()) {
-            throw new ValidationException("Username cannot be empty");
-        }
-
-        // Check email
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            throw new ValidationException("Email cannot be empty");
-        }
-
-        // Check for duplicate username
-        if (userRepository.existsByUsernameAndTenantId(user.getUsername(), user.getTenantId())) {
-            throw new DuplicateResourceException("Username already exists in this tenant");
-        }
-
-        // Check for duplicate email
-        if (userRepository.existsByEmailAndTenantId(user.getEmail(), user.getTenantId())) {
-            throw new DuplicateResourceException("Email already exists in this tenant");
-        }
-    }
+    boolean verifyPassword(User user, String password);
 }

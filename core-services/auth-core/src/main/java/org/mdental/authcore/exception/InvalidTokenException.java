@@ -1,5 +1,6 @@
 package org.mdental.authcore.exception;
 
+import org.mdental.commons.exception.BaseException;
 import org.mdental.commons.model.ErrorCode;
 
 /**

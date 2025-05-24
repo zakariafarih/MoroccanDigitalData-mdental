@@ -1,6 +1,6 @@
 package org.mdental.authcore.domain.repository;
 
-import org.mdental.authcore.persistence.entity.Outbox;
+import org.mdental.authcore.domain.model.Outbox;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
