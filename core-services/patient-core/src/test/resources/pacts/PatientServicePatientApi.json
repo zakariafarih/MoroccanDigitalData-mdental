@@ -1,0 +1,119 @@
+{
+  "consumer": {
+    "name": "api-gateway"
+  },
+  "provider": {
+    "name": "patient-core"
+  },
+  "interactions": [
+    {
+      "description": "a request to get a page of patients",
+      "request": {
+        "method": "GET",
+        "path": "/api/clinics/00000000-0000-0000-0000-000000000001/patients",
+        "query": {
+          "page": ["0"],
+          "size": ["10"]
+        },
+        "headers": {
+          "X-User-ClinicId": "00000000-0000-0000-0000-000000000001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "data": {
+            "items": [
+              {
+                "id": "00000000-0000-0000-0000-000000000002",
+                "clinicId": "00000000-0000-0000-0000-000000000001",
+                "firstName": "John",
+                "lastName": "Doe",
+                "dateOfBirth": "1980-01-01",
+                "gender": "MALE",
+                "status": "ACTIVE"
+              }
+            ],
+            "page": 0,
+            "size": 10,
+            "totalElements": 1,
+            "totalPages": 1
+          }
+        }
+      }
+    },
+    {
+      "description": "a request to get a patient by id",
+      "request": {
+        "method": "GET",
+        "path": "/api/clinics/00000000-0000-0000-0000-000000000001/patients/00000000-0000-0000-0000-000000000002",
+        "headers": {
+          "X-User-ClinicId": "00000000-0000-0000-0000-000000000001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "data": {
+            "id": "00000000-0000-0000-0000-000000000002",
+            "clinicId": "00000000-0000-0000-0000-000000000001",
+            "firstName": "John",
+            "lastName": "Doe",
+            "dateOfBirth": "1980-01-01",
+            "gender": "MALE",
+            "status": "ACTIVE"
+          }
+        }
+      }
+    },
+    {
+      "description": "a request to create a patient",
+      "request": {
+        "method": "POST",
+        "path": "/api/clinics/00000000-0000-0000-0000-000000000001/patients",
+        "headers": {
+          "Content-Type": "application/json",
+          "X-User-ClinicId": "00000000-0000-0000-0000-000000000001"
+        },
+        "body": {
+          "firstName": "Jane",
+          "lastName": "Smith",
+          "dateOfBirth": "1985-05-15",
+          "gender": "FEMALE",
+          "status": "ACTIVE"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "success": true,
+          "data": {
+            "id": "00000000-0000-0000-0000-000000000003",
+            "clinicId": "00000000-0000-0000-0000-000000000001",
+            "firstName": "Jane",
+            "lastName": "Smith",
+            "dateOfBirth": "1985-05-15",
+            "gender": "FEMALE",
+            "status": "ACTIVE"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  }
+}
